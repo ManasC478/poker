@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button"
 import { SessionDialog } from "@/components/session-dialog"
 import type { Session } from "@/lib/types"
 import { toDateKey, formatSigned, formatMoney, formatLongDate } from "@/lib/format"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
+import ButtonLink from "./button-link"
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 const MONTHS = [
@@ -196,47 +199,53 @@ export function PokerCalendar({ sessions }: { sessions: Session[] }) {
 
 function SessionCard({ session }: { session: Session }) {
   return (
-    <Link
-      href={`/sessions/${session.id}`}
-      className="block rounded-xl border border-border bg-background p-4 transition-colors hover:border-primary/50"
+    <Card
+      className="rounded-xl bg-background"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <MapPin className="size-3.5 shrink-0" />
-            <span className="truncate">{session.location || "Unknown location"}</span>
-          </div>
-          {session.notes && <p className="mt-0.5 truncate text-xs text-muted-foreground">{session.notes}</p>}
-        </div>
-      </div>
+      <CardHeader className="flex items-start justify-between gap-2">
+        <CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <MapPin className="size-3.5 shrink-0" />
+          <span className="truncate">{session.location || "Unknown location"}</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table className="text-xs">
+          <TableHeader className="text-muted-foreground">
+            <TableRow>
+              <TableHead>
 
-      <div className="mt-3 flex items-center justify-between border-y border-border py-2 text-xs">
-        <span className="text-muted-foreground">
-          Pot <span className="font-semibold text-foreground tabular-nums">{formatMoney(session.total_pot)}</span>
-        </span>
-        <span className="text-muted-foreground">
-          {session.participants.length} player{session.participants.length === 1 ? "" : "s"}
-        </span>
-      </div>
-
-      {session.participants.length > 0 && (
-        <ul className="mt-2 flex flex-col gap-1">
-          {session.participants.map((p) => (
-            <li key={p.player_id} className="flex items-center justify-between gap-2 text-sm">
-              <span className="truncate text-foreground">
-                {p.name}
-                {p.nickname ? <span className="text-muted-foreground"> “{p.nickname}”</span> : null}
-              </span>
-              <span
-                className="shrink-0 font-semibold tabular-nums"
-                style={{ color: p.net > 0 ? "var(--win)" : p.net < 0 ? "var(--loss)" : "var(--muted-foreground)" }}
-              >
-                {formatSigned(p.net)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Link>
+                <span className="font-semibold text-foreground tabular-nums">{formatMoney(session.total_pot)}</span> Pot
+              </TableHead>
+              <TableHead className="text-muted-foreground">
+                {session.participants.length} player{session.participants.length === 1 ? "" : "s"}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {session.participants.length > 0 &&
+              session.participants.map((p) => (
+                <TableRow key={p.player_id}>
+                  <TableCell className="truncate text-foreground">
+                    {p.name}
+                    {p.nickname ? <span className="text-muted-foreground"> “{p.nickname}”</span> : null}
+                  </TableCell>
+                  <TableCell
+                    className="shrink-0 font-semibold tabular-nums"
+                    style={{ color: p.net > 0 ? "var(--win)" : p.net < 0 ? "var(--loss)" : "var(--muted-foreground)" }}
+                  >
+                    {formatSigned(p.net)}
+                  </TableCell>
+                </TableRow>
+              ))
+            }
+          </TableBody>
+        </Table>
+      </CardContent>
+      <CardFooter>
+        <ButtonLink className="w-full" href={`/sessions/${session.id}`}>
+          View
+        </ButtonLink>
+      </CardFooter>
+    </Card>
   )
 }
