@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   Loader2,
+  Lock,
   MapPin,
   Plus,
   Trash2,
@@ -32,6 +33,9 @@ import {
 } from "@/lib/actions"
 import type { Player, SessionDetail } from "@/lib/types"
 import { formatLongDate, formatMoney, formatSigned } from "@/lib/format"
+import NumberInput from "./number-input"
+import { Badge } from "./ui/badge"
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 
 export function SessionDetailView({
   session,
@@ -195,11 +199,22 @@ export function SessionDetailView({
         <ArrowLeft className="size-4" /> Back to calendar
       </Link>
 
-      <header className="mb-8">
+      <header className="mb-8 space-y-2">
         <p className="text-xs font-medium uppercase tracking-wider text-primary">Session</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {formatLongDate(session.date)}
         </h1>
+        {session.locked && (
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge variant="destructive">
+                <Lock data-icon="inline-start" />
+                Locked
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent><p>Session buy-ins and cash-outs are locked.</p></TooltipContent>
+          </Tooltip>
+        )}
       </header>
 
       <section className="mb-8 space-y-4 rounded-2xl border border-border bg-card p-5">
@@ -284,33 +299,44 @@ export function SessionDetailView({
                       </span>
                     </TableCell>
                     <TableCell>
-                      <NumberInput
-                        value={editingBuyIns[b.id] ?? String(b.amount)}
-                        onChange={(v) => setEditingBuyIns((prev) => ({ ...prev, [b.id]: v }))}
-                        onBlur={() => {
-                          const val = editingBuyIns[b.id]
-                          if (val !== undefined && val !== String(b.amount)) {
-                            handleUpdateBuyIn(b.id, val)
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            const val = editingBuyIns[b.id] ?? String(b.amount)
-                            if (val !== String(b.amount)) handleUpdateBuyIn(b.id, val)
-                          }
-                        }}
-                      />
+                      {
+                        session.locked ? (
+                          <p>${b.amount}</p>
+                        ) : (
+                          <NumberInput
+                            value={editingBuyIns[b.id] ?? String(b.amount)}
+                            onChange={(v) => setEditingBuyIns((prev) => ({ ...prev, [b.id]: v }))}
+                            onBlur={() => {
+                              const val = editingBuyIns[b.id]
+                              if (val !== undefined && val !== String(b.amount)) {
+                                handleUpdateBuyIn(b.id, val)
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                const val = editingBuyIns[b.id] ?? String(b.amount)
+                                if (val !== String(b.amount)) handleUpdateBuyIn(b.id, val)
+                              }
+                            }}
+                            disabled={pending}
+                          />
+                        )
+                      }
                     </TableCell>
-                    <TableCell>
-                      <button
-                        onClick={() => handleDeleteBuyIn(b.id)}
-                        disabled={pending}
-                        className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive"
-                        aria-label="Delete buy-in"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
-                    </TableCell>
+                    {
+                      !session.locked && (
+                        <TableCell>
+                          <button
+                            onClick={() => handleDeleteBuyIn(b.id)}
+                            disabled={pending}
+                            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive"
+                            aria-label="Delete buy-in"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </TableCell>
+                      )
+                    }
                   </TableRow>
                 )
               })}
@@ -318,46 +344,50 @@ export function SessionDetailView({
           </Table>
         )}
 
-        <div className="mt-4 flex flex-wrap items-end gap-2">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Player</span>
-            <select
-              value={newPlayerId}
-              onChange={(e) => setNewPlayerId(e.target.value ? Number(e.target.value) : "")}
-              className="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+        {!session.locked && (
+          <div className="mt-4 flex flex-wrap items-end gap-2">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Player</span>
+              <select
+                value={newPlayerId}
+                onChange={(e) => setNewPlayerId(e.target.value ? Number(e.target.value) : "")}
+                className="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+              >
+                <option value="">Select player…</option>
+                {players.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                    {p.nickname ? ` "${p.nickname}"` : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Amount</span>
+              <NumberInput
+                value={newAmount}
+                onChange={setNewAmount}
+                placeholder="0"
+                wide
+                disabled={pending || session.locked}
+              />
+            </label>
+            <Button
+              onClick={handleAddBuyIn}
+              disabled={pending || !newPlayerId || !newAmount}
+              className="h-10 gap-1.5"
             >
-              <option value="">Select player…</option>
-              {players.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                  {p.nickname ? ` "${p.nickname}"` : ""}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Amount</span>
-            <NumberInput
-              value={newAmount}
-              onChange={setNewAmount}
-              placeholder="0"
-              wide
-            />
-          </label>
-          <Button
-            onClick={handleAddBuyIn}
-            disabled={pending || !newPlayerId || !newAmount}
-            className="h-10 gap-1.5"
-          >
-            <Plus className="size-4" /> Add buy-in
-          </Button>
-          <button
-            onClick={() => setShowAddPlayer((v) => !v)}
-            className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
-          >
-            <UserPlus className="size-4" /> New player
-          </button>
-        </div>
+              <Plus className="size-4" /> Add buy-in
+            </Button>
+            <button
+              onClick={() => setShowAddPlayer((v) => !v)}
+              className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            >
+              <UserPlus className="size-4" /> New player
+            </button>
+          </div>
+
+        )}
 
         {showAddPlayer && (
           <div className="mt-3 flex flex-wrap items-end gap-2 rounded-lg border border-border bg-background/50 p-3">
@@ -411,22 +441,30 @@ export function SessionDetailView({
                     <span className="text-sm tabular-nums text-muted-foreground">{formatMoney(p.buy_in)}</span>
                   </TableCell>
                   <TableCell>
-                    <NumberInput
-                      value={editingCashOuts[p.player_id] ?? String(p.cash_out)}
-                      onChange={(v) => setEditingCashOuts((prev) => ({ ...prev, [p.player_id]: v }))}
-                      onBlur={() => {
-                        const val = editingCashOuts[p.player_id]
-                        if (val !== undefined && val !== String(p.cash_out)) {
-                          handleUpdateCashOut(p.player_id, val)
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          const val = editingCashOuts[p.player_id] ?? String(p.cash_out)
-                          if (val !== String(p.cash_out)) handleUpdateCashOut(p.player_id, val)
-                        }
-                      }}
-                    />
+
+                    {
+                      session.locked ? (
+                        <p>${p.cash_out}</p>
+                      ) : (
+                        <NumberInput
+                          value={editingCashOuts[p.player_id] ?? String(p.cash_out)}
+                          onChange={(v) => setEditingCashOuts((prev) => ({ ...prev, [p.player_id]: v }))}
+                          onBlur={() => {
+                            const val = editingCashOuts[p.player_id]
+                            if (val !== undefined && val !== String(p.cash_out)) {
+                              handleUpdateCashOut(p.player_id, val)
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const val = editingCashOuts[p.player_id] ?? String(p.cash_out)
+                              if (val !== String(p.cash_out)) handleUpdateCashOut(p.player_id, val)
+                            }
+                          }}
+                          disabled={pending || session.locked}
+                        />
+                      )
+                    }
                   </TableCell>
                   <TableCell>
                     <span
@@ -477,39 +515,3 @@ export function SessionDetailView({
   )
 }
 
-function NumberInput({
-  value,
-  onChange,
-  onBlur,
-  onKeyDown,
-  placeholder,
-  wide,
-}: {
-  value: string
-  onChange: (v: string) => void
-  onBlur?: () => void
-  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
-  placeholder?: string
-  wide?: boolean
-}) {
-  function handle(e: React.ChangeEvent<HTMLInputElement>) {
-    const v = e.target.value
-    if (v === "" || /^\d*\.?\d*$/.test(v)) onChange(v)
-  }
-  return (
-    <div className={`relative ${wide ? "w-24" : "w-20"} shrink-0`}>
-      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-        $
-      </span>
-      <input
-        inputMode="decimal"
-        value={value}
-        onChange={handle}
-        onBlur={onBlur}
-        onKeyDown={onKeyDown}
-        placeholder={placeholder}
-        className="h-10 w-full rounded-lg border border-input bg-background pl-5 pr-1.5 text-right text-sm tabular-nums text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
-      />
-    </div>
-  )
-}

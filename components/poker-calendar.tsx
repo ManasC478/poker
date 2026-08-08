@@ -1,8 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import Link from "next/link"
-import { ChevronLeft, ChevronRight, Plus, MapPin } from "lucide-react"
+import { ChevronLeft, ChevronRight, Lock, Plus, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SessionDialog } from "@/components/session-dialog"
 import type { Session } from "@/lib/types"
@@ -10,6 +9,8 @@ import { toDateKey, formatSigned, formatMoney, formatLongDate } from "@/lib/form
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
 import ButtonLink from "./button-link"
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
+import { Badge } from "./ui/badge"
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 const MONTHS = [
@@ -202,11 +203,24 @@ function SessionCard({ session }: { session: Session }) {
     <Card
       className="rounded-xl bg-background"
     >
-      <CardHeader className="flex items-start justify-between gap-2">
+      <CardHeader>
         <CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <MapPin className="size-3.5 shrink-0" />
           <span className="truncate">{session.location || "Unknown location"}</span>
         </CardTitle>
+        <CardDescription>
+          {session.locked && (
+            <Tooltip>
+              <TooltipTrigger>
+                <Badge variant="destructive">
+                  <Lock data-icon="inline-start" />
+                  Locked
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent><p>Session buy-ins and cash-outs are locked.</p></TooltipContent>
+            </Tooltip>
+          )}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Table className="text-xs">

@@ -18,6 +18,7 @@ export type Session = {
   date: string // YYYY-MM-DD
   location: string | null
   notes: string | null
+  locked: boolean
   participants: Participant[]
   total_pot: number
 }
@@ -49,6 +50,7 @@ export type SessionDetail = {
   date: string
   location: string | null
   notes: string | null
+  locked: boolean
   buy_ins: BuyInRow[]
   results: SessionResult[]
 }
