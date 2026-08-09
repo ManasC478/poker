@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Lock, Plus, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SessionDialog } from "@/components/session-dialog"
 import type { Session } from "@/lib/types"
-import { toDateKey, formatSigned, formatMoney, formatLongDate } from "@/lib/format"
+import { toDateKey, formatSigned, formatMoney, formatLongDate, parseDateKey } from "@/lib/format"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
 import ButtonLink from "./button-link"
@@ -18,8 +18,8 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ]
 
-export function PokerCalendar({ sessions }: { sessions: Session[] }) {
-  const today = new Date()
+export function PokerCalendar({ sessions, date }: { sessions: Session[], date: string }) {
+  const today = parseDateKey(date)
   const [viewYear, setViewYear] = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
   const [selectedKey, setSelectedKey] = useState<string>(toDateKey(today))
