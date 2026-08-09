@@ -203,3 +203,51 @@ export async function deleteSession(id: number) {
   revalidatePath("/calendar")
   return { ok: true }
 }
+
+export async function createMomentType(
+  name: string,
+  emoji: string | null,
+  description: string | null
+) {
+  const supabase = await createClient()
+  const trimmed = name.trim()
+  if (!trimmed) return { error: "Name is required" }
+
+  const { data, error } = await supabase
+    .from("moment_types")
+    .insert({
+      name: trimmed,
+      emoji: emoji?.trim() || null,
+      description: description?.trim() || null,
+    })
+    .select("id, name, emoji, description, created_at")
+    .single()
+
+  if (error) return { error: error.message }
+  return { momentType: data }
+}
+
+export async function addMoment(sessionId: number, momentTypeId: number, note: string | null) {
+  const supabase = await createClient()
+  if (!momentTypeId) return { error: "Moment type is required" }
+
+  const { error } = await supabase
+    .from("moments")
+    .insert({
+      session_id: sessionId,
+      moment_type_id: momentTypeId,
+      note: note?.trim() || null,
+    })
+
+  if (error) return { error: error.message }
+  revalidateSession(sessionId)
+  return { ok: true }
+}
+
+export async function deleteMoment(momentId: number, sessionId: number) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("moments").delete().eq("id", momentId)
+  if (error) return { error: error.message }
+  revalidateSession(sessionId)
+  return { ok: true }
+}

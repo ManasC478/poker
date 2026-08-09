@@ -1,11 +1,21 @@
 import { createClient } from "@/lib/supabase/server"
-import type { Player, Session, SessionDetail, LeaderboardEntry } from "@/lib/types"
+import type { Player, Session, SessionDetail, LeaderboardEntry, MomentType, MomentRow } from "@/lib/types"
 
 export async function getPlayers(): Promise<Player[]> {
   const supabase = await createClient()
   const { data, error } = await supabase.from("players").select("id, name, nickname").order("name")
   if (error) {
     console.log("getPlayers error:", error.message)
+    return []
+  }
+  return data ?? []
+}
+
+export async function getMomentTypes(): Promise<MomentType[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase.from("moment_types").select("id, name, emoji, description, created_at").order("name")
+  if (error) {
+    console.log("getMomentTypes error:", error.message)
     return []
   }
   return data ?? []
@@ -72,13 +82,23 @@ export async function getSessions(): Promise<Session[]> {
 export async function getSessionDetail(id: number): Promise<SessionDetail | null> {
   const supabase = await createClient()
 
-  const [{ data: session, error: sErr }, { data: buyIns }, { data: resultRows }, { data: players }] =
-    await Promise.all([
-      supabase.from("sessions").select("id, date, location, notes, locked").eq("id", id).single(),
-      supabase.from("buy_ins").select("id, session_id, player_id, amount, created_at").eq("session_id", id).order("created_at"),
-      supabase.from("results").select("session_id, player_id, cash_out").eq("session_id", id),
-      supabase.from("players").select("id, name, nickname"),
-    ])
+  const [
+    { data: session, error: sErr },
+    { data: buyIns },
+    { data: resultRows },
+    { data: players },
+    { data: rawMoments },
+  ] = await Promise.all([
+    supabase.from("sessions").select("id, date, location, notes, locked").eq("id", id).single(),
+    supabase.from("buy_ins").select("id, session_id, player_id, amount, created_at").eq("session_id", id).order("created_at"),
+    supabase.from("results").select("session_id, player_id, cash_out").eq("session_id", id),
+    supabase.from("players").select("id, name, nickname"),
+    supabase
+      .from("moments")
+      .select("id, session_id, moment_type_id, note, created_at, moment_types(id, name, emoji, description, created_at)")
+      .eq("session_id", id)
+      .order("created_at"),
+  ])
 
   if (sErr || !session) return null
 
@@ -108,6 +128,15 @@ export async function getSessionDetail(id: number): Promise<SessionDetail | null
     }
   })
 
+  const moments: MomentRow[] = (rawMoments ?? []).map((m: any) => ({
+    id: m.id,
+    session_id: m.session_id,
+    moment_type_id: m.moment_type_id,
+    moment_type: Array.isArray(m.moment_types) ? m.moment_types[0] : m.moment_types,
+    note: m.note,
+    created_at: m.created_at,
+  }))
+
   return {
     id: session.id,
     date: session.date,
@@ -116,6 +145,7 @@ export async function getSessionDetail(id: number): Promise<SessionDetail | null
     locked: session.locked,
     buy_ins,
     results: results.sort((a, b) => a.name.localeCompare(b.name)),
+    moments,
   }
 }
 

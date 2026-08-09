@@ -6,12 +6,18 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
+  CircleDollarSign,
+  DollarSign,
   Loader2,
   Lock,
   MapPin,
+  Minus,
   Plus,
+  Sparkles,
   Trash2,
+  User,
   UserPlus,
+  WalletCards,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,6 +30,8 @@ import {
 } from "@/components/ui/table"
 import {
   addBuyIn,
+  addMoment,
+  createMomentType,
   createPlayer,
   deleteBuyIn,
   deleteSession,
@@ -31,7 +39,7 @@ import {
   updateCashOut,
   updateSessionMeta,
 } from "@/lib/actions"
-import type { Player, SessionDetail } from "@/lib/types"
+import type { MomentType, Player, SessionDetail } from "@/lib/types"
 import { formatLongDate, formatMoney, formatSigned } from "@/lib/format"
 import NumberInput from "./number-input"
 import { Badge } from "./ui/badge"
@@ -40,9 +48,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 export function SessionDetailView({
   session,
   players,
+  momentTypes,
 }: {
   session: SessionDetail
   players: Player[]
+  momentTypes: MomentType[]
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -63,6 +73,13 @@ export function SessionDetailView({
   const [editingBuyIns, setEditingBuyIns] = useState<Record<number, string>>({})
   const [editingCashOuts, setEditingCashOuts] = useState<Record<number, string>>({})
 
+  // Moments state
+  const [showAddMomentType, setShowAddMomentType] = useState(false)
+  const [newTypeName, setNewTypeName] = useState("")
+  const [newTypeEmoji, setNewTypeEmoji] = useState("")
+  const [newTypeDescription, setNewTypeDescription] = useState("")
+  const [addingMomentType, setAddingMomentType] = useState(false)
+
   const totals = useMemo(() => {
     const totalPot = session.buy_ins.reduce((s, b) => s + b.amount, 0)
     const totalCash = session.results.reduce((s, r) => s + r.cash_out, 0)
@@ -82,6 +99,40 @@ export function SessionDetailView({
       playerResults: playerResults.sort((a, b) => b.net - a.net),
     }
   }, [session])
+
+  const momentCounters = useMemo(() => {
+    const momentsByType = new Map<number, MomentRow[]>()
+    for (const m of session.moments) {
+      if (!m.moment_type_id) continue
+      const list = momentsByType.get(m.moment_type_id) ?? []
+      list.push(m)
+      momentsByType.set(m.moment_type_id, list)
+    }
+
+    const typeMap = new Map<number, MomentType>()
+    for (const mt of momentTypes) {
+      typeMap.set(mt.id, mt)
+    }
+    for (const m of session.moments) {
+      if (m.moment_type_id && m.moment_type && !typeMap.has(m.moment_type_id)) {
+        typeMap.set(m.moment_type_id, m.moment_type)
+      }
+    }
+
+    return Array.from(typeMap.values())
+      .map((mt) => {
+        const moments = momentsByType.get(mt.id) ?? []
+        return {
+          momentType: mt,
+          count: moments.length,
+          moments,
+        }
+      })
+      .sort((a, b) => {
+        if (a.count !== b.count) return b.count - a.count
+        return a.momentType.name.localeCompare(b.momentType.name)
+      })
+  }, [momentTypes, session.moments])
 
   function saveMeta() {
     setError(null)
@@ -190,6 +241,36 @@ export function SessionDetailView({
     })
   }
 
+  async function handleCreateMomentType() {
+    if (!newTypeName.trim()) return
+    setAddingMomentType(true)
+    setError(null)
+    const res = await createMomentType(
+      newTypeName.trim(),
+      newTypeEmoji.trim() || null,
+      newTypeDescription.trim() || null
+    )
+    setAddingMomentType(false)
+    if (res.error) {
+      setError(res.error)
+      return
+    }
+    setNewTypeName("")
+    setNewTypeEmoji("")
+    setNewTypeDescription("")
+    setShowAddMomentType(false)
+    router.refresh()
+  }
+
+  function handleIncrementMoment(momentTypeId: number) {
+    setError(null)
+    startTransition(async () => {
+      const res = await addMoment(session.id, momentTypeId, null)
+      if (res.error) setError(res.error)
+      else router.refresh()
+    })
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:py-12">
       <Link
@@ -253,7 +334,7 @@ export function SessionDetailView({
 
       {totals.playerResults.length > 0 && (
         <section className="mb-8 rounded-2xl border border-border bg-card p-5">
-          <h2 className="mb-3 text-sm font-semibold text-card-foreground">Players</h2>
+          <h2 className="flex items-center gap-2 mb-4 text-sm font-semibold text-card-foreground"><User className="size-4" /> Player</h2>
           <ul className="flex flex-col gap-1.5">
             {totals.playerResults.map((p) => (
               <li key={p.player_id} className="flex items-center justify-between gap-2 text-sm">
@@ -271,7 +352,138 @@ export function SessionDetailView({
       )}
 
       <section className="mb-8 rounded-2xl border border-border bg-card p-5">
-        <h2 className="mb-4 text-sm font-semibold text-card-foreground">Buy-ins</h2>
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-card-foreground">
+              <Sparkles className="size-4 text-amber-500" /> Session Moments
+            </h2>
+            {session.moments.length > 0 && (
+              <Badge variant="outline" className="text-xs">
+                {session.moments.length} total
+              </Badge>
+            )}
+          </div>
+          {!session.locked && (
+            <button
+              onClick={() => setShowAddMomentType((v) => !v)}
+              className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+            >
+              <Plus className="size-3.5" /> New type
+            </button>
+          )}
+        </div>
+
+        {showAddMomentType && (
+          <div className="mb-4 flex flex-col gap-2.5 rounded-xl border border-border bg-background/80 p-3.5 shadow-xs">
+            <p className="text-xs font-semibold text-foreground">Create New Moment Type</p>
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="flex w-16 flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Emoji</span>
+                <input
+                  value={newTypeEmoji}
+                  onChange={(e) => setNewTypeEmoji(e.target.value)}
+                  placeholder="🤔"
+                  className="h-9 rounded-md border border-input bg-background px-2.5 text-center text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+                />
+              </label>
+              <label className="flex flex-1 flex-col gap-1 min-w-[180px]">
+                <span className="text-xs text-muted-foreground">Name *</span>
+                <input
+                  value={newTypeName}
+                  onChange={(e) => setNewTypeName(e.target.value)}
+                  placeholder='e.g. Dave - Looking to the Lord'
+                  className="h-9 rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+                />
+              </label>
+            </div>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Description (optional)</span>
+              <input
+                value={newTypeDescription}
+                onChange={(e) => setNewTypeDescription(e.target.value)}
+                placeholder="e.g. Always looking up at the ceiling when being raised"
+                className="h-9 rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+              />
+            </label>
+            <div className="flex justify-end gap-2 pt-1">
+              <button
+                onClick={() => setShowAddMomentType(false)}
+                className="h-8 rounded-md px-3 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Cancel
+              </button>
+              <Button
+                onClick={handleCreateMomentType}
+                disabled={addingMomentType || !newTypeName.trim()}
+                size="sm"
+                className="h-8"
+              >
+                {addingMomentType ? <Loader2 className="size-3.5 animate-spin" /> : "Save type"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {momentCounters.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No moment types created yet. Click &ldquo;New type&rdquo; above to create one!
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {momentCounters.map(({ momentType, count, moments }) => (
+              <div
+                key={momentType.id}
+                className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-sm transition-colors ${count > 0
+                  ? "border-border/80 bg-background/80 shadow-xs"
+                  : "border-border/40 bg-background/30 opacity-75"
+                  }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-lg text-lg ${count > 0 ? "bg-amber-500/15" : "bg-muted"
+                      }`}
+                  >
+                    {momentType.emoji || "✨"}
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="truncate font-semibold text-foreground">
+                      {momentType.name}
+                    </h3>
+                    {momentType.description && (
+                      <p className="truncate text-xs text-muted-foreground">{momentType.description}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span
+                    className={`flex h-8 min-w-[2.25rem] items-center justify-center rounded-lg px-2 text-sm font-bold tabular-nums ${count > 0
+                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                      : "bg-secondary text-muted-foreground"
+                      }`}
+                  >
+                    {count}
+                  </span>
+                  {!session.locked && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleIncrementMoment(momentType.id)}
+                        disabled={pending}
+                        className="flex size-7 items-center justify-center rounded-md border border-border bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
+                        title="Increment count"
+                      >
+                        <Plus className="size-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+      <section className="mb-8 rounded-2xl border border-border bg-card p-5">
+        <h2 className="flex items-center gap-2 mb-4 text-sm font-semibold text-card-foreground"><WalletCards className="size-4 text-amber-200" /> Buy-in</h2>
 
         {session.buy_ins.length === 0 ? (
           <p className="mb-4 text-sm text-muted-foreground">No buy-ins yet. Add one below.</p>
@@ -418,7 +630,7 @@ export function SessionDetailView({
 
       {totals.playerResults.length > 0 && (
         <section className="mb-8 rounded-2xl border border-border bg-card p-5">
-          <h2 className="mb-4 text-sm font-semibold text-card-foreground">Results</h2>
+          <h2 className="flex items-center gap-2 mb-4 text-sm font-semibold text-card-foreground"><DollarSign className="size-4 text-green-500" /> Results</h2>
           <Table>
             <TableHeader>
               <TableRow>
@@ -482,6 +694,7 @@ export function SessionDetailView({
           </Table>
         </section>
       )}
+
 
       <div className="mb-8 flex items-center justify-between rounded-lg bg-secondary/50 px-4 py-3 text-sm">
         <span className="text-muted-foreground">

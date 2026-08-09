@@ -45,6 +45,23 @@ export type SessionResult = {
   cash_out: number
 }
 
+export type MomentType = {
+  id: number
+  name: string
+  emoji: string | null
+  description: string | null
+  created_at: string
+}
+
+export type MomentRow = {
+  id: number
+  session_id: number
+  moment_type_id: number
+  moment_type: MomentType
+  note: string | null
+  created_at: string
+}
+
 export type SessionDetail = {
   id: number
   date: string
@@ -53,6 +70,7 @@ export type SessionDetail = {
   locked: boolean
   buy_ins: BuyInRow[]
   results: SessionResult[]
+  moments: MomentRow[]
 }
 
 export type LeaderboardEntry = {
