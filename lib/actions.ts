@@ -14,13 +14,14 @@ export async function createSession(input: {
   date: string
   location: string | null
   notes: string | null
+  start_time: string
 }) {
   const supabase = await createClient()
   if (!input.date) return { error: "Date is required" }
 
   const { data, error } = await supabase
     .from("sessions")
-    .insert({ date: input.date, location: input.location, notes: input.notes })
+    .insert({ date: input.date, location: input.location, notes: input.notes, start_time: input.start_time })
     .select("id")
     .single()
 
@@ -34,11 +35,18 @@ export async function updateSessionMeta(input: {
   id: number
   location: string | null
   notes: string | null
+  start_time: string
 }) {
   const supabase = await createClient()
+  const payload: Record<string, any> = {
+    location: input.location,
+    notes: input.notes,
+    start_time: input.start_time
+  }
+
   const { error } = await supabase
     .from("sessions")
-    .update({ location: input.location, notes: input.notes })
+    .update(payload)
     .eq("id", input.id)
 
   if (error) return { error: error.message }

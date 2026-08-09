@@ -19,6 +19,7 @@ export function SessionDialog({
   const router = useRouter()
   const [location, setLocation] = useState("")
   const [notes, setNotes] = useState("")
+  const [startTime, setStartTime] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
@@ -38,6 +39,7 @@ export function SessionDialog({
         date: dateKey,
         location: location.trim() || null,
         notes: notes.trim() || null,
+        start_time: startTime.trim()
       })
       if (res.error) setError(res.error)
       else if (res.id) {
@@ -79,6 +81,16 @@ export function SessionDialog({
               onChange={(e) => setLocation(e.target.value)}
               placeholder="e.g. Mike's basement"
               className="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-foreground">Start time</span>
+            <input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
+              required
             />
           </label>
           <label className="flex flex-col gap-1.5">

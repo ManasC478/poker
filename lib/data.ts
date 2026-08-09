@@ -25,7 +25,7 @@ export async function getSessions(): Promise<Session[]> {
   const supabase = await createClient()
 
   const [{ data: sessions, error: sErr }, { data: buyIns }, { data: results }, { data: players }] = await Promise.all([
-    supabase.from("sessions").select("id, date, location, notes, locked").order("date", { ascending: false }),
+    supabase.from("sessions").select("id, date, start_time, location, notes, locked").order("date", { ascending: false }),
     supabase.from("buy_ins").select("session_id, player_id, amount"),
     supabase.from("results").select("session_id, player_id, cash_out"),
     supabase.from("players").select("id, name, nickname"),
@@ -70,6 +70,7 @@ export async function getSessions(): Promise<Session[]> {
     return {
       id: s.id,
       date: s.date,
+      start_time: s.start_time,
       location: s.location,
       notes: s.notes,
       locked: s.locked,
@@ -89,7 +90,7 @@ export async function getSessionDetail(id: number): Promise<SessionDetail | null
     { data: players },
     { data: rawMoments },
   ] = await Promise.all([
-    supabase.from("sessions").select("id, date, location, notes, locked").eq("id", id).single(),
+    supabase.from("sessions").select("id, date, start_time, location, notes, locked").eq("id", id).single(),
     supabase.from("buy_ins").select("id, session_id, player_id, amount, created_at").eq("session_id", id).order("created_at"),
     supabase.from("results").select("session_id, player_id, cash_out").eq("session_id", id),
     supabase.from("players").select("id, name, nickname"),
@@ -140,6 +141,7 @@ export async function getSessionDetail(id: number): Promise<SessionDetail | null
   return {
     id: session.id,
     date: session.date,
+    start_time: session.start_time ?? null,
     location: session.location,
     notes: session.notes,
     locked: session.locked,

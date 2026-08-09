@@ -16,6 +16,7 @@ export type Participant = {
 export type Session = {
   id: number
   date: string // YYYY-MM-DD
+  start_time?: string | null
   location: string | null
   notes: string | null
   locked: boolean
@@ -65,6 +66,7 @@ export type MomentRow = {
 export type SessionDetail = {
   id: number
   date: string
+  start_time: string
   location: string | null
   notes: string | null
   locked: boolean

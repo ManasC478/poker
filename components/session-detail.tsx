@@ -6,12 +6,11 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
-  CircleDollarSign,
+  Clock,
   DollarSign,
   Loader2,
   Lock,
   MapPin,
-  Minus,
   Plus,
   Sparkles,
   Trash2,
@@ -39,7 +38,7 @@ import {
   updateCashOut,
   updateSessionMeta,
 } from "@/lib/actions"
-import type { MomentType, Player, SessionDetail } from "@/lib/types"
+import type { MomentRow, MomentType, Player, SessionDetail } from "@/lib/types"
 import { formatLongDate, formatMoney, formatSigned } from "@/lib/format"
 import NumberInput from "./number-input"
 import { Badge } from "./ui/badge"
@@ -59,6 +58,7 @@ export function SessionDetailView({
   const [error, setError] = useState<string | null>(null)
 
   const [location, setLocation] = useState(session.location ?? "")
+  const [startTime, setStartTime] = useState(session.start_time)
   const [notes, setNotes] = useState(session.notes ?? "")
   const [metaDirty, setMetaDirty] = useState(false)
 
@@ -141,6 +141,7 @@ export function SessionDetailView({
         id: session.id,
         location: location.trim() || null,
         notes: notes.trim() || null,
+        start_time: startTime.trim()
       })
       if (res.error) setError(res.error)
       else {
@@ -282,9 +283,11 @@ export function SessionDetailView({
 
       <header className="mb-8 space-y-2">
         <p className="text-xs font-medium uppercase tracking-wider text-primary">Session</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          {formatLongDate(session.date)}
-        </h1>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            {formatLongDate(session.date)}
+          </h1>
+        </div>
         {session.locked && (
           <Tooltip>
             <TooltipTrigger>
@@ -307,6 +310,21 @@ export function SessionDetailView({
             value={location}
             onChange={(e) => {
               setLocation(e.target.value)
+              setMetaDirty(true)
+            }}
+            placeholder="e.g. Mike's basement"
+            className="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+            <Clock className="size-4 text-muted-foreground" /> Start time
+          </span>
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => {
+              setStartTime(e.target.value)
               setMetaDirty(true)
             }}
             placeholder="e.g. Mike's basement"
