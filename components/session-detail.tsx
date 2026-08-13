@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   Clock,
   DollarSign,
+  HandCoins,
   Loader2,
   Lock,
   MapPin,
@@ -43,6 +44,7 @@ import { formatLongDate, formatMoney, formatSigned } from "@/lib/format"
 import NumberInput from "./number-input"
 import { Badge } from "./ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
+import { settleUp } from "@/lib/utils"
 
 export function SessionDetailView({
   session,
@@ -133,6 +135,17 @@ export function SessionDetailView({
         return a.momentType.name.localeCompare(b.momentType.name)
       })
   }, [momentTypes, session.moments])
+
+  const settlement = useMemo(() => {
+    const balances = totals.playerResults.map(p => {
+      return {
+        playerId: p.player_id,
+        playerName: p.name,
+        net: p.net
+      }
+    })
+    return settleUp(balances)
+  }, [totals.playerResults])
 
   function saveMeta() {
     setError(null)
@@ -713,6 +726,27 @@ export function SessionDetailView({
         </section>
       )}
 
+      <section className="mb-8 rounded-2xl border border-border bg-card p-5">
+        <h2 className="flex items-center gap-2 mb-4 text-sm font-semibold text-card-foreground"><HandCoins className="size-4 text-yellow-300" /> Settle up</h2>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>From</TableHead>
+              <TableHead>To</TableHead>
+              <TableHead>Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {settlement.map((s) => (
+              <TableRow key={`${s.from}-${s.to}`}>
+                <TableCell>{s.from}</TableCell>
+                <TableCell>{s.to}</TableCell>
+                <TableCell>{s.amount}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </section>
 
       <div className="mb-8 flex items-center justify-between rounded-lg bg-secondary/50 px-4 py-3 text-sm">
         <span className="text-muted-foreground">
