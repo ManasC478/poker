@@ -89,6 +89,7 @@ export async function getSessionDetail(id: number): Promise<SessionDetail | null
     { data: resultRows },
     { data: players },
     { data: rawMoments },
+    { data: rawTags }
   ] = await Promise.all([
     supabase.from("sessions").select("id, date, start_time, location, notes, locked").eq("id", id).single(),
     supabase.from("buy_ins").select("id, session_id, player_id, amount, created_at").eq("session_id", id).order("created_at"),
@@ -99,6 +100,7 @@ export async function getSessionDetail(id: number): Promise<SessionDetail | null
       .select("id, session_id, moment_type_id, note, created_at, moment_types(id, name, emoji, description, created_at)")
       .eq("session_id", id)
       .order("created_at"),
+    supabase.from("session_tags").select("tag").eq("session_id", id),
   ])
 
   if (sErr || !session) return null
@@ -138,6 +140,8 @@ export async function getSessionDetail(id: number): Promise<SessionDetail | null
     created_at: m.created_at,
   }))
 
+  const tags: string[] = (rawTags ?? []).map((t: { tag: any; }) => t.tag)
+
   return {
     id: session.id,
     date: session.date,
@@ -148,6 +152,7 @@ export async function getSessionDetail(id: number): Promise<SessionDetail | null
     buy_ins,
     results: results.sort((a, b) => a.name.localeCompare(b.name)),
     moments,
+    tags
   }
 }
 

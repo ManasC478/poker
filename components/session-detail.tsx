@@ -313,22 +313,26 @@ export function SessionDetailView({
 
       <header className="mb-8 space-y-2">
         <p className="text-xs font-medium uppercase tracking-wider text-primary">Session</p>
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="flex items-center gap-2">
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             {formatLongDate(session.date)}
           </h1>
+          {
+            session.locked && (
+              <Tooltip>
+                <TooltipTrigger>
+                  <Lock className="inline text-destructive" />
+                </TooltipTrigger>
+                <TooltipContent><p>Session buy-ins and cash-outs are locked.</p></TooltipContent>
+              </Tooltip>
+            )
+          }
         </div>
-        {session.locked && (
-          <Tooltip>
-            <TooltipTrigger>
-              <Badge variant="destructive">
-                <Lock data-icon="inline-start" />
-                Locked
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent><p>Session buy-ins and cash-outs are locked.</p></TooltipContent>
-          </Tooltip>
-        )}
+        <div className="flex space-x-2">
+          {
+            session.tags.map((t) => <Badge key={t}>{t}</Badge>)
+          }
+        </div>
       </header>
 
       <section className="mb-8 space-y-4 rounded-2xl border border-border bg-card p-5">

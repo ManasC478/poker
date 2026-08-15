@@ -73,6 +73,7 @@ export type SessionDetail = {
   buy_ins: BuyInRow[]
   results: SessionResult[]
   moments: MomentRow[]
+  tags: string[]
 }
 
 export type LeaderboardEntry = {
