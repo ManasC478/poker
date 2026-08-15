@@ -26,35 +26,50 @@ export async function getMomentTypes(): Promise<MomentType[]> {
 export async function getSessions(conditions: FilterCondition<any, Set<number>>[] = []): Promise<Session[]> {
   const supabase = await createClient()
 
-  const builderConds = conditions.filter(c => c.type === 'builder');
-  const queryConds = conditions.filter(c => c.type === 'query');
+  let finalList: number[] | null = null;
+  if (conditions.length > 0) {
+    const builderConds = conditions.filter(c => c.type === 'builder');
+    const queryConds = conditions.filter(c => c.type === 'query');
 
-  let builderSet = new Set();
-  if (builderConds.length > 0) {
-    let filterQuery = supabase.from("sessions").select("id");
-    for (const cond of builderConds) {
-      if (!cond.builder) continue;
-      filterQuery = cond.builder(filterQuery, cond.value);
+    let builderSet = new Set();
+    if (builderConds.length > 0) {
+      let filterQuery = supabase.from("sessions").select("id");
+      for (const cond of builderConds) {
+        if (!cond.builder) continue;
+        filterQuery = cond.builder(filterQuery, cond.value);
+      }
+
+      const { data: builderRows } = await filterQuery;
+      builderSet = builderRows ? new Set(builderRows.map(r => r.id)) : new Set();
     }
+    const queryResultSets = await Promise.all(queryConds.map(c => c.query(c.value)));
 
-    const { data: builderRows } = await filterQuery;
-    builderSet = builderRows ? new Set(builderRows.map(r => r.id)) : new Set();
-  }
-  const queryResultSets = await Promise.all(queryConds.map(c => c.query(c.value)));
+    const allSets = [builderSet, ...queryResultSets];
+    let finalSet = new Set()
+    for (const set of allSets) {
+      finalSet = finalSet.intersection(set);
+    }
+    finalList = [...finalSet] as number[];
 
-  const allSets = [builderSet, ...queryResultSets];
-  let finalSet = new Set()
-  for (const set of allSets) {
-    finalSet = finalSet.union(set);
   }
-  const finalList = [...finalSet]
+
+  let sessionsQuery = supabase.from("sessions").select("id, date, start_time, location, notes, locked").order("date", { ascending: false });
+  let buyInsQuery = supabase.from("buy_ins").select("session_id, player_id, amount");
+  let resultsQuery = supabase.from("results").select("session_id, player_id, cash_out");
+  const playersQuery = supabase.from("players").select("id, name, nickname");
+
+  if (finalList !== null) {
+    sessionsQuery = sessionsQuery.in('id', finalList);
+    buyInsQuery = buyInsQuery.in('session_id', finalList);
+    resultsQuery = resultsQuery.in('session_id', finalList);
+  }
 
   const [{ data: sessions, error: sErr }, { data: buyIns }, { data: results }, { data: players }] = await Promise.all([
-    supabase.from("sessions").select("id, date, start_time, location, notes, locked").in('id', finalList).order("date", { ascending: false }),
-    supabase.from("buy_ins").select("session_id, player_id, amount").in('session_id', finalList),
-    supabase.from("results").select("session_id, player_id, cash_out").in('session_id', finalList),
-    supabase.from("players").select("id, name, nickname"),
-  ])
+    sessionsQuery,
+    buyInsQuery,
+    resultsQuery,
+    playersQuery,
+  ]);
 
   if (sErr) {
     console.log("getSessions error:", sErr.message)
