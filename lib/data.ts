@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
-import type { Player, Session, SessionDetail, LeaderboardEntry, MomentType, MomentRow } from "@/lib/types"
+import type { Player, Session, SessionDetail, LeaderboardEntry, MomentType, MomentRow, FilterCondition } from "@/lib/types"
+import { hasTagQueryFn } from "./db/filter/query"
 
 export async function getPlayers(): Promise<Player[]> {
   const supabase = await createClient()
@@ -21,13 +22,37 @@ export async function getMomentTypes(): Promise<MomentType[]> {
   return data ?? []
 }
 
-export async function getSessions(): Promise<Session[]> {
+
+export async function getSessions(conditions: FilterCondition<any, Set<number>>[] = []): Promise<Session[]> {
   const supabase = await createClient()
 
+  const builderConds = conditions.filter(c => c.type === 'builder');
+  const queryConds = conditions.filter(c => c.type === 'query');
+
+  let builderSet = new Set();
+  if (builderConds.length > 0) {
+    let filterQuery = supabase.from("sessions").select("id");
+    for (const cond of builderConds) {
+      if (!cond.builder) continue;
+      filterQuery = cond.builder(filterQuery, cond.value);
+    }
+
+    const { data: builderRows } = await filterQuery;
+    builderSet = builderRows ? new Set(builderRows.map(r => r.id)) : new Set();
+  }
+  const queryResultSets = await Promise.all(queryConds.map(c => c.query(c.value)));
+
+  const allSets = [builderSet, ...queryResultSets];
+  let finalSet = new Set()
+  for (const set of allSets) {
+    finalSet = finalSet.union(set);
+  }
+  const finalList = [...finalSet]
+
   const [{ data: sessions, error: sErr }, { data: buyIns }, { data: results }, { data: players }] = await Promise.all([
-    supabase.from("sessions").select("id, date, start_time, location, notes, locked").order("date", { ascending: false }),
-    supabase.from("buy_ins").select("session_id, player_id, amount"),
-    supabase.from("results").select("session_id, player_id, cash_out"),
+    supabase.from("sessions").select("id, date, start_time, location, notes, locked").in('id', finalList).order("date", { ascending: false }),
+    supabase.from("buy_ins").select("session_id, player_id, amount").in('session_id', finalList),
+    supabase.from("results").select("session_id, player_id, cash_out").in('session_id', finalList),
     supabase.from("players").select("id, name, nickname"),
   ])
 
@@ -157,7 +182,14 @@ export async function getSessionDetail(id: number): Promise<SessionDetail | null
 }
 
 export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
-  const sessions = await getSessions()
+  const tagCondition: FilterCondition<string[], Set<number>> = {
+    field: 'tags',
+    type: 'query',
+    value: ['Squad'],
+    query: hasTagQueryFn
+  }
+
+  const sessions = await getSessions([tagCondition])
   const byPlayer = new Map<number, LeaderboardEntry>()
 
   for (const s of sessions) {

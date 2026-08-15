@@ -1,3 +1,5 @@
+import { PostgrestFilterBuilder, PostgrestQueryBuilder } from "@supabase/supabase-js"
+
 export type Player = {
   id: number
   name: string
@@ -84,4 +86,15 @@ export type LeaderboardEntry = {
   sessions: number
   total_buy_in: number
   total_cash_out: number
+}
+
+export type BuilderFn<T> = (query: PostgrestFilterBuilder<any,any,any,any,any,any,any,any>, value: T) => PostgrestFilterBuilder<any,any,any,any,any,any,any,any>;
+export type QueryFn<T, R> = (value: T) => Promise<R>;
+
+export type FilterCondition<T, R=any> = {
+  field: string;
+  type: 'builder' | 'query';
+  value: any;
+  builder?: BuilderFn<T>;
+  query?: QueryFn<T, R>;
 }
