@@ -212,6 +212,24 @@ export async function deleteSession(id: number) {
   return { ok: true }
 }
 
+export async function lockSession(id: number) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("sessions").update({ locked: true }).eq("id", id)
+  if (error) return { error: error.message }
+  revalidatePath("/")
+  revalidatePath("/calendar")
+  return { ok: true }
+}
+
+export async function unlockSession(id: number) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("sessions").update({ locked: false }).eq("id", id)
+  if (error) return { error: error.message }
+  revalidatePath("/")
+  revalidatePath("/calendar")
+  return { ok: true }
+}
+
 export async function createMomentType(
   name: string,
   emoji: string | null,

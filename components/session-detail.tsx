@@ -35,6 +35,8 @@ import {
   createPlayer,
   deleteBuyIn,
   deleteSession,
+  lockSession,
+  unlockSession,
   updateBuyIn,
   updateCashOut,
   updateSessionMeta,
@@ -44,7 +46,7 @@ import { formatLongDate, formatMoney, formatSigned } from "@/lib/format"
 import NumberInput from "./number-input"
 import { Badge } from "./ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
-import { settleUp } from "@/lib/utils"
+import { cn, settleUp } from "@/lib/utils"
 
 export function SessionDetailView({
   session,
@@ -240,6 +242,21 @@ export function SessionDetailView({
           delete next[playerId]
           return next
         })
+        router.refresh()
+      }
+    })
+  }
+
+  function handleLockedSession() {
+    if (session.locked && !confirm("Unlock this session?")) return
+    if (!session.locked && !confirm("Lock this session?")) return
+
+    setError(null)
+    startTransition(async () => {
+      const res = await (session.locked ? unlockSession(session.id) : lockSession(session.id))
+      if (res.error) setError(res.error)
+      else {
+        setMetaDirty(false)
         router.refresh()
       }
     })
@@ -767,14 +784,21 @@ export function SessionDetailView({
         <p className="mb-4 rounded-lg bg-destructive/15 px-3 py-2 text-sm text-destructive">{error}</p>
       )}
 
-      <footer className="border-t border-border pt-6">
-        <button
+      <footer className="flex justify-end space-x-5">
+        <Button
+          onClick={handleLockedSession}
+          disabled={pending}
+          variant="secondary"
+        >
+          <Lock className="size-4" /> {session.locked ? "Unlock" : "Lock"} session
+        </Button>
+        <Button
           onClick={handleDeleteSession}
           disabled={pending}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-destructive transition-colors hover:opacity-80"
+          variant="destructive"
         >
           <Trash2 className="size-4" /> Delete session
-        </button>
+        </Button>
       </footer>
     </div>
   )
