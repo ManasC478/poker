@@ -31,7 +31,7 @@ export async function getSessions(conditions: FilterCondition<any, Set<number>>[
     const builderConds = conditions.filter(c => c.type === 'builder');
     const queryConds = conditions.filter(c => c.type === 'query');
 
-    let builderSet = new Set();
+    let builderSet: Set<number> | null = null;
     if (builderConds.length > 0) {
       let filterQuery = supabase.from("sessions").select("id");
       for (const cond of builderConds) {
@@ -42,15 +42,17 @@ export async function getSessions(conditions: FilterCondition<any, Set<number>>[
       const { data: builderRows } = await filterQuery;
       builderSet = builderRows ? new Set(builderRows.map(r => r.id)) : new Set();
     }
-    const queryResultSets = await Promise.all(queryConds.map(c => c.query(c.value)));
 
-    const allSets = [builderSet, ...queryResultSets];
-    let finalSet = new Set()
-    for (const set of allSets) {
+    const queryResultSets = await Promise.all(queryConds.map(c => c.query(c.value)));
+    
+    if (builderSet !== null) {
+      queryResultSets.push(builderSet);
+    }
+    let finalSet = queryResultSets[0];
+    for (const set of queryResultSets.slice(1)) {
       finalSet = finalSet.intersection(set);
     }
     finalList = [...finalSet] as number[];
-
   }
 
   let sessionsQuery = supabase.from("sessions").select("id, date, start_time, location, notes, locked").order("date", { ascending: false });
@@ -203,6 +205,7 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
     value: ['Squad'],
     query: hasTagQueryFn
   }
+
 
   const sessions = await getSessions([tagCondition])
   const byPlayer = new Map<number, LeaderboardEntry>()
