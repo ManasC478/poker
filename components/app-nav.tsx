@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, Trophy } from "lucide-react"
+import { Calendar, Spade, Trophy } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const links = [
   { href: "/", label: "Leaderboard", icon: Trophy },
   { href: "/calendar", label: "Calendar", icon: Calendar },
+  { href: "/sessions", label: "Sessions", icon: Spade },
 ]
 
 export function AppNav() {

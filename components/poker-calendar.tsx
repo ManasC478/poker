@@ -1,16 +1,12 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight, Lock, Plus, MapPin } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SessionDialog } from "@/components/session-dialog"
 import type { Session } from "@/lib/types"
-import { toDateKey, formatSigned, formatMoney, formatLongDate, parseDateKey } from "@/lib/format"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
-import ButtonLink from "./button-link"
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
-import { Badge } from "./ui/badge"
+import { toDateKey, formatMoney, formatLongDate, parseDateKey } from "@/lib/format"
+import SessionCard from "./session-card"
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 const MONTHS = [
@@ -63,7 +59,7 @@ export function PokerCalendar({ sessions, date }: { sessions: Session[], date: s
   const todayKey = toDateKey(today)
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
+    <div>
       <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground text-balance sm:text-4xl">
@@ -198,68 +194,3 @@ export function PokerCalendar({ sessions, date }: { sessions: Session[], date: s
   )
 }
 
-function SessionCard({ session }: { session: Session }) {
-  return (
-    <Card
-      className="rounded-xl bg-background"
-    >
-      <CardHeader>
-        <CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <MapPin className="size-3.5 shrink-0" />
-          <span className="truncate">{session.location || "Unknown location"}</span>
-        </CardTitle>
-        <CardDescription>
-          {session.locked && (
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge variant="destructive">
-                  <Lock data-icon="inline-start" />
-                  Locked
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent><p>Session buy-ins and cash-outs are locked.</p></TooltipContent>
-            </Tooltip>
-          )}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table className="text-xs">
-          <TableHeader className="text-muted-foreground">
-            <TableRow>
-              <TableHead>
-
-                <span className="font-semibold text-foreground tabular-nums">{formatMoney(session.total_pot)}</span> Pot
-              </TableHead>
-              <TableHead className="text-muted-foreground">
-                {session.participants.length} player{session.participants.length === 1 ? "" : "s"}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {session.participants.length > 0 &&
-              session.participants.map((p) => (
-                <TableRow key={p.player_id}>
-                  <TableCell className="truncate text-foreground">
-                    {p.name}
-                    {p.nickname ? <span className="text-muted-foreground"> “{p.nickname}”</span> : null}
-                  </TableCell>
-                  <TableCell
-                    className="shrink-0 font-semibold tabular-nums"
-                    style={{ color: p.net > 0 ? "var(--win)" : p.net < 0 ? "var(--loss)" : "var(--muted-foreground)" }}
-                  >
-                    {formatSigned(p.net)}
-                  </TableCell>
-                </TableRow>
-              ))
-            }
-          </TableBody>
-        </Table>
-      </CardContent>
-      <CardFooter>
-        <ButtonLink className="w-full" href={`/sessions/${session.id}`}>
-          View
-        </ButtonLink>
-      </CardFooter>
-    </Card>
-  )
-}

@@ -1,3 +1,4 @@
+import Page from "@/components/page"
 import { PokerCalendar } from "@/components/poker-calendar"
 import { getSessions } from "@/lib/data"
 import { toDateKey } from "@/lib/format"
@@ -16,8 +17,8 @@ export default async function CalendarPage({ searchParams }: {
   const sessions = await getSessions()
 
   return (
-    <main className="min-h-dvh">
+    <Page>
       <PokerCalendar sessions={sessions} date={query.date} />
-    </main>
+    </Page>
   )
 }

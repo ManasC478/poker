@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { SessionDetailView } from "@/components/session-detail"
 import { getMomentTypes, getPlayers, getSessionDetail } from "@/lib/data"
+import Page from "@/components/page"
 
 export const dynamic = "force-dynamic"
 
@@ -17,8 +18,8 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   if (!session) notFound()
 
   return (
-    <main className="min-h-dvh">
+    <Page>
       <SessionDetailView session={session} players={players} momentTypes={momentTypes} />
-    </main>
+    </Page>
   )
 }

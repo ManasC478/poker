@@ -25,7 +25,7 @@ export function Leaderboard({
   const leader = entries[0]
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:py-12">
+    <div>
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex items-center gap-2 text-primary">

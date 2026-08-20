@@ -303,7 +303,7 @@ export function SessionDetailView({
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:py-12">
+    <div>
       <Link
         href={`/calendar?date=${session.date}`}
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
