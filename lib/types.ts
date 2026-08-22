@@ -9,7 +9,7 @@ export type Player = {
 export type Participant = {
   player_id: number
   name: string
-  nickname: string | null
+nickname: string | null
   buy_in: number
   cash_out: number
   net: number
@@ -18,7 +18,7 @@ export type Participant = {
 export type Session = {
   id: number
   date: string // YYYY-MM-DD
-  start_time?: string | null
+  start_time: string | null
   location: string | null
   notes: string | null
   locked: boolean
@@ -97,4 +97,9 @@ export type FilterCondition<T, R=any> = {
   value: any;
   builder?: BuilderFn<T>;
   query?: QueryFn<T, R>;
+}
+
+export type SessionFilter = {
+  playerId: number
+  locked: 'all' | 'true' | 'false'
 }

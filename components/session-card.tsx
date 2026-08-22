@@ -1,8 +1,8 @@
 "use client"
 
-import { MapPin, Lock } from "lucide-react"
+import { MapPin, Lock, Clock } from "lucide-react"
 import type { Session } from "@/lib/types"
-import { formatMoney, formatSigned } from "@/lib/format"
+import { formatMoney, formatSigned, formatTime } from "@/lib/format"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import ButtonLink from "@/components/button-link"
@@ -16,6 +16,10 @@ export default function SessionCard({ session }: { session: Session }) {
         <CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <MapPin className="size-3.5 shrink-0" />
           <span className="truncate">{session.location || "Unknown location"}</span>
+        </CardTitle>
+        <CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Clock className="size-3.5 shrink-0" />
+          <span className="truncate">{session.date} at {formatTime(session.start_time)}</span>
         </CardTitle>
         <CardDescription>
           {session.locked && (
