@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Calendar, Trophy } from "lucide-react"
+import { Calendar, SquareArrowOutUpRight, Trophy } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import {
   Table,
@@ -86,13 +86,16 @@ export function Leaderboard({
                   <TableCell>
                     <RankBadge rank={i + 1} />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="flex items-center gap-1">
                     <span className="font-medium text-foreground">
                       {entry.name}
                       {entry.nickname ? (
                         <span className="font-normal text-muted-foreground"> “{entry.nickname}”</span>
                       ) : null}
                     </span>
+                    <Link href={`/sessions?playerId=${entry.player_id}`}>
+                      <SquareArrowOutUpRight className="size-3" />
+                    </Link>
                   </TableCell>
                   <TableCell className="text-right tabular-nums text-muted-foreground">
                     {entry.sessions}
