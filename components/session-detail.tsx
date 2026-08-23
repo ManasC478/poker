@@ -322,7 +322,7 @@ export function SessionDetailView({
 
       {totals.playerResults.length > 0 && (
         <section className="mb-8 rounded-2xl border border-border bg-card p-5">
-          <h2 className="flex items-center gap-2 mb-4 text-sm font-semibold text-card-foreground"><User className="size-4" /> Player</h2>
+          <h2 className="flex items-center gap-2 mb-4 text-sm font-semibold text-card-foreground"><User className="size-4" /> Player buy-ins</h2>
           <Accordion multiple className="space-y-2 border-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
             {totals.playerResults.map((p) => (
               <Card className="w-full py-2" key={p.player_id}>
