@@ -42,11 +42,14 @@ import {
   updateSessionMeta,
 } from "@/lib/actions"
 import type { MomentRow, MomentType, Player, SessionDetail } from "@/lib/types"
-import { formatLongDate, formatMoney, formatSigned } from "@/lib/format"
+import { formatLongDate, formatMoney, formatSigned, formatTime } from "@/lib/format"
 import NumberInput from "./number-input"
 import { Badge } from "./ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 import { cn, settleUp } from "@/lib/utils"
+import { ScrollArea } from "./ui/scroll-area"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
+import { Card, CardContent, CardHeader } from "./ui/card"
 
 export function SessionDetailView({
   session,
@@ -387,19 +390,37 @@ export function SessionDetailView({
       {totals.playerResults.length > 0 && (
         <section className="mb-8 rounded-2xl border border-border bg-card p-5">
           <h2 className="flex items-center gap-2 mb-4 text-sm font-semibold text-card-foreground"><User className="size-4" /> Player</h2>
-          <ul className="flex flex-col gap-1.5">
+          <Accordion multiple className="space-y-2 border-0 grid grid-cols-1 sm:grid-cols-2 gap-2">
             {totals.playerResults.map((p) => (
-              <li key={p.player_id} className="flex items-center justify-between gap-2 text-sm">
-                <span className="truncate text-foreground">
-                  {p.name}
-                  {p.nickname ? <span className="text-muted-foreground"> “{p.nickname}”</span> : null}
-                </span>
-                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                  {formatMoney(p.buy_in)} in
-                </span>
-              </li>
+              <Card className="w-full py-2" key={p.player_id}>
+                <CardContent>
+                  <AccordionItem>
+                    <AccordionTrigger className="flex items-center justify-between gap-2 text-sm w-full">
+                      <span className="truncate text-foreground">
+                        {p.name}
+                        {p.nickname ? <span className="text-muted-foreground"> “{p.nickname}”</span> : null}
+                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                        {formatMoney(p.buy_in)} in
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <Table>
+                        <TableBody>
+                          {session.buy_ins.filter(b => b.player_id == p.player_id).sort((a, b) => b.created_at.localeCompare(a.created_at)).map((r) => (
+                            <TableRow key={r.id}>
+                              <TableCell>{formatTime(r.created_at)}</TableCell>
+                              <TableCell>{formatMoney(r.amount)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </AccordionContent>
+                  </AccordionItem>
+                </CardContent>
+              </Card>
             ))}
-          </ul>
+          </Accordion>
         </section>
       )}
 
@@ -481,7 +502,7 @@ export function SessionDetailView({
             No moment types created yet. Click &ldquo;New type&rdquo; above to create one!
           </p>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {momentCounters.map(({ momentType, count, moments }) => (
               <div
                 key={momentType.id}
@@ -534,151 +555,156 @@ export function SessionDetailView({
           </div>
         )}
       </section>
-      <section className="mb-8 rounded-2xl border border-border bg-card p-5">
-        <h2 className="flex items-center gap-2 mb-4 text-sm font-semibold text-card-foreground"><WalletCards className="size-4 text-amber-200" /> Buy-in</h2>
 
-        {session.buy_ins.length === 0 ? (
-          <p className="mb-4 text-sm text-muted-foreground">No buy-ins yet. Add one below.</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Player</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {session.buy_ins.map((b, i) => {
-                const isRebuy = session.buy_ins.slice(0, i).some((prev) => prev.player_id === b.player_id)
-                return (
-                  <TableRow key={b.id}>
-                    <TableCell>
-                      <span className="text-sm text-foreground">
-                        {b.name}
-                        {b.nickname ? <span className="text-muted-foreground"> “{b.nickname}”</span> : null}
-                        {isRebuy && (
-                          <span className="ml-1.5 text-xs text-muted-foreground">(rebuy)</span>
-                        )}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {
-                        session.locked ? (
-                          <p>${b.amount}</p>
-                        ) : (
-                          <NumberInput
-                            value={editingBuyIns[b.id] ?? String(b.amount)}
-                            onChange={(v) => setEditingBuyIns((prev) => ({ ...prev, [b.id]: v }))}
-                            onBlur={() => {
-                              const val = editingBuyIns[b.id]
-                              if (val !== undefined && val !== String(b.amount)) {
-                                handleUpdateBuyIn(b.id, val)
-                              }
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                const val = editingBuyIns[b.id] ?? String(b.amount)
-                                if (val !== String(b.amount)) handleUpdateBuyIn(b.id, val)
-                              }
-                            }}
-                            disabled={pending}
-                          />
-                        )
-                      }
-                    </TableCell>
-                    {
-                      !session.locked && (
-                        <TableCell>
-                          <button
-                            onClick={() => handleDeleteBuyIn(b.id)}
-                            disabled={pending}
-                            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive"
-                            aria-label="Delete buy-in"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </TableCell>
-                      )
-                    }
+      {!session.locked && (
+        <section className="mb-8 rounded-2xl border border-border bg-card p-5">
+          <h2 className="flex items-center gap-2 mb-4 text-sm font-semibold text-card-foreground"><WalletCards className="size-4 text-amber-200" /> Buy-in</h2>
+
+          {session.buy_ins.length === 0 ? (
+            <p className="mb-4 text-sm text-muted-foreground">No buy-ins yet. Add one below.</p>
+          ) : (
+            <ScrollArea className="h-96">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Player</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        )}
+                </TableHeader>
+                <TableBody>
+                  {session.buy_ins.map((b, i) => {
+                    const isRebuy = session.buy_ins.slice(0, i).some((prev) => prev.player_id === b.player_id)
+                    return (
+                      <TableRow key={b.id}>
+                        <TableCell>
+                          <span className="text-sm text-foreground">
+                            {b.name}
+                            {b.nickname ? <span className="text-muted-foreground"> “{b.nickname}”</span> : null}
+                            {isRebuy && (
+                              <span className="ml-1.5 text-xs text-muted-foreground">(rebuy)</span>
+                            )}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {
+                            session.locked ? (
+                              <p>${b.amount}</p>
+                            ) : (
+                              <NumberInput
+                                value={editingBuyIns[b.id] ?? String(b.amount)}
+                                onChange={(v) => setEditingBuyIns((prev) => ({ ...prev, [b.id]: v }))}
+                                onBlur={() => {
+                                  const val = editingBuyIns[b.id]
+                                  if (val !== undefined && val !== String(b.amount)) {
+                                    handleUpdateBuyIn(b.id, val)
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    const val = editingBuyIns[b.id] ?? String(b.amount)
+                                    if (val !== String(b.amount)) handleUpdateBuyIn(b.id, val)
+                                  }
+                                }}
+                                disabled={pending}
+                              />
+                            )
+                          }
+                        </TableCell>
+                        {
+                          !session.locked && (
+                            <TableCell>
+                              <button
+                                onClick={() => handleDeleteBuyIn(b.id)}
+                                disabled={pending}
+                                className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-destructive"
+                                aria-label="Delete buy-in"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </TableCell>
+                          )
+                        }
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          )}
 
-        {!session.locked && (
-          <div className="mt-4 flex flex-wrap items-end gap-2">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Player</span>
-              <select
-                value={newPlayerId}
-                onChange={(e) => setNewPlayerId(e.target.value ? Number(e.target.value) : "")}
-                className="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+          {!session.locked && (
+            <div className="mt-4 flex flex-wrap items-end gap-2">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Player</span>
+                <select
+                  value={newPlayerId}
+                  onChange={(e) => setNewPlayerId(e.target.value ? Number(e.target.value) : "")}
+                  className="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+                >
+                  <option value="">Select player…</option>
+                  {players.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                      {p.nickname ? ` "${p.nickname}"` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Amount</span>
+                <NumberInput
+                  value={newAmount}
+                  onChange={setNewAmount}
+                  placeholder="0"
+                  wide
+                  disabled={pending || session.locked}
+                />
+              </label>
+              <Button
+                onClick={handleAddBuyIn}
+                disabled={pending || !newPlayerId || !newAmount}
+                className="h-10 gap-1.5"
               >
-                <option value="">Select player…</option>
-                {players.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                    {p.nickname ? ` "${p.nickname}"` : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Amount</span>
-              <NumberInput
-                value={newAmount}
-                onChange={setNewAmount}
-                placeholder="0"
-                wide
-                disabled={pending || session.locked}
-              />
-            </label>
-            <Button
-              onClick={handleAddBuyIn}
-              disabled={pending || !newPlayerId || !newAmount}
-              className="h-10 gap-1.5"
-            >
-              <Plus className="size-4" /> Add buy-in
-            </Button>
-            <button
-              onClick={() => setShowAddPlayer((v) => !v)}
-              className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
-            >
-              <UserPlus className="size-4" /> New player
-            </button>
-          </div>
+                <Plus className="size-4" /> Add buy-in
+              </Button>
+              <button
+                onClick={() => setShowAddPlayer((v) => !v)}
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                <UserPlus className="size-4" /> New player
+              </button>
+            </div>
 
-        )}
+          )}
 
-        {showAddPlayer && (
-          <div className="mt-3 flex flex-wrap items-end gap-2 rounded-lg border border-border bg-background/50 p-3">
-            <label className="flex flex-1 flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Name</span>
-              <input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Full name"
-                className="h-9 rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-              />
-            </label>
-            <label className="flex flex-1 flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Nickname</span>
-              <input
-                value={newNick}
-                onChange={(e) => setNewNick(e.target.value)}
-                placeholder="Optional"
-                className="h-9 rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-              />
-            </label>
-            <Button onClick={handleAddPlayer} disabled={addingPlayer || !newName.trim()} className="h-9">
-              {addingPlayer ? <Loader2 className="size-4 animate-spin" /> : "Add"}
-            </Button>
-          </div>
-        )}
-      </section>
+          {showAddPlayer && (
+            <div className="mt-3 flex flex-wrap items-end gap-2 rounded-lg border border-border bg-background/50 p-3">
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Name</span>
+                <input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Full name"
+                  className="h-9 rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+                />
+              </label>
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Nickname</span>
+                <input
+                  value={newNick}
+                  onChange={(e) => setNewNick(e.target.value)}
+                  placeholder="Optional"
+                  className="h-9 rounded-md border border-input bg-background px-2.5 text-sm text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+                />
+              </label>
+              <Button onClick={handleAddPlayer} disabled={addingPlayer || !newName.trim()} className="h-9">
+                {addingPlayer ? <Loader2 className="size-4 animate-spin" /> : "Add"}
+              </Button>
+            </div>
+          )}
+        </section>
+      )}
 
       {totals.playerResults.length > 0 && (
         <section className="mb-8 rounded-2xl border border-border bg-card p-5">
