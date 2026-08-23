@@ -1,23 +1,21 @@
 "use client"
 
-import type React from "react"
 import { useMemo, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
-  Clock,
   DollarSign,
   HandCoins,
   Loader2,
   Lock,
-  MapPin,
   Plus,
   Sparkles,
   Trash2,
   User,
   UserPlus,
   WalletCards,
+  X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -39,17 +37,17 @@ import {
   unlockSession,
   updateBuyIn,
   updateCashOut,
-  updateSessionMeta,
 } from "@/lib/actions"
 import type { MomentRow, MomentType, Player, SessionDetail } from "@/lib/types"
 import { formatLongDate, formatMoney, formatSigned, formatTime } from "@/lib/format"
 import NumberInput from "./number-input"
 import { Badge } from "./ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
-import { cn, settleUp } from "@/lib/utils"
+import { settleUp } from "@/lib/utils"
 import { ScrollArea } from "./ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
-import { Card, CardContent, CardHeader } from "./ui/card"
+import { Card, CardContent } from "./ui/card"
+import SessionMetaForm from "./session-meta-form"
 
 export function SessionDetailView({
   session,
@@ -63,11 +61,6 @@ export function SessionDetailView({
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-
-  const [location, setLocation] = useState(session.location ?? "")
-  const [startTime, setStartTime] = useState(session.start_time)
-  const [notes, setNotes] = useState(session.notes ?? "")
-  const [metaDirty, setMetaDirty] = useState(false)
 
   const [newPlayerId, setNewPlayerId] = useState<number | "">("")
   const [newAmount, setNewAmount] = useState("")
@@ -151,23 +144,6 @@ export function SessionDetailView({
     })
     return settleUp(balances)
   }, [totals.playerResults])
-
-  function saveMeta() {
-    setError(null)
-    startTransition(async () => {
-      const res = await updateSessionMeta({
-        id: session.id,
-        location: location.trim() || null,
-        notes: notes.trim() || null,
-        start_time: startTime.trim()
-      })
-      if (res.error) setError(res.error)
-      else {
-        setMetaDirty(false)
-        router.refresh()
-      }
-    })
-  }
 
   function handleAddBuyIn() {
     if (!newPlayerId || !newAmount) return
@@ -259,7 +235,6 @@ export function SessionDetailView({
       const res = await (session.locked ? unlockSession(session.id) : lockSession(session.id))
       if (res.error) setError(res.error)
       else {
-        setMetaDirty(false)
         router.refresh()
       }
     })
@@ -314,6 +289,16 @@ export function SessionDetailView({
         <ArrowLeft className="size-4" /> Back to calendar
       </Link>
 
+      {error && (
+        <div className="flex items-center justify-between mb-4 rounded-lg bg-destructive/15 px-3 py-2 text-sm text-destructive">
+          <p>{error}</p>
+          <Button size="icon" variant="destructive" onClick={() => setError(null)}>
+            <X />
+          </Button>
+        </div>
+      )}
+
+
       <header className="mb-8 space-y-2">
         <p className="text-xs font-medium uppercase tracking-wider text-primary">Session</p>
         <div className="flex items-center gap-2">
@@ -331,61 +316,9 @@ export function SessionDetailView({
             )
           }
         </div>
-        <div className="flex space-x-2">
-          {
-            session.tags.map((t) => <Badge key={t}>{t}</Badge>)
-          }
-        </div>
       </header>
 
-      <section className="mb-8 space-y-4 rounded-2xl border border-border bg-card p-5">
-        <label className="flex flex-col gap-1.5">
-          <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-            <MapPin className="size-4 text-muted-foreground" /> Location
-          </span>
-          <input
-            value={location}
-            onChange={(e) => {
-              setLocation(e.target.value)
-              setMetaDirty(true)
-            }}
-            placeholder="e.g. Mike's basement"
-            className="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-            <Clock className="size-4 text-muted-foreground" /> Start time
-          </span>
-          <input
-            type="time"
-            value={startTime}
-            onChange={(e) => {
-              setStartTime(e.target.value)
-              setMetaDirty(true)
-            }}
-            placeholder="e.g. Mike's basement"
-            className="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-foreground">Notes</span>
-          <textarea
-            value={notes}
-            onChange={(e) => {
-              setNotes(e.target.value)
-              setMetaDirty(true)
-            }}
-            placeholder="e.g. $1/$2 NLH"
-            className="h-20 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
-          />
-        </label>
-        {metaDirty && (
-          <Button size="sm" onClick={saveMeta} disabled={pending}>
-            {pending ? <Loader2 className="size-4 animate-spin" /> : "Save details"}
-          </Button>
-        )}
-      </section>
+      <SessionMetaForm session={session} setError={setError} pending={pending} startTransition={startTransition} />
 
       {totals.playerResults.length > 0 && (
         <section className="mb-8 rounded-2xl border border-border bg-card p-5">
@@ -503,7 +436,7 @@ export function SessionDetailView({
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {momentCounters.map(({ momentType, count, moments }) => (
+            {momentCounters.map(({ momentType, count }) => (
               <div
                 key={momentType.id}
                 className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-sm transition-colors ${count > 0
@@ -809,10 +742,6 @@ export function SessionDetailView({
             : `Off by $${Math.abs(totals.totalPot - totals.totalCash).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
         </span>
       </div>
-
-      {error && (
-        <p className="mb-4 rounded-lg bg-destructive/15 px-3 py-2 text-sm text-destructive">{error}</p>
-      )}
 
       <footer className="flex justify-end space-x-5">
         <Button

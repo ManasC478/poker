@@ -277,3 +277,29 @@ export async function deleteMoment(momentId: number, sessionId: number) {
   revalidateSession(sessionId)
   return { ok: true }
 }
+
+export async function addTag(tags: string[], sessionId: number) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from("session_tags")
+    .insert(tags.map(t => ({ tag: t, session_id: sessionId })))
+
+  if (error) return { error: error.message }
+  revalidatePath("/")
+  revalidatePath("/calendar")
+  return { ok: true }
+}
+
+export async function removeTag(tags: string[], sessionId: number) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from("session_tags")
+    .delete()
+    .in("tag", tags)
+    .eq("session_id", sessionId)
+
+  if (error) return { error: error.message }
+  revalidatePath("/")
+  revalidatePath("/calendar")
+  return { ok: true }
+}

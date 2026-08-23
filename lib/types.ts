@@ -1,4 +1,4 @@
-import { PostgrestFilterBuilder, PostgrestQueryBuilder } from "@supabase/supabase-js"
+import { PostgrestFilterBuilder } from "@supabase/supabase-js"
 
 export type Player = {
   id: number
