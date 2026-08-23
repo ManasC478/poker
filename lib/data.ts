@@ -44,7 +44,7 @@ export async function getSessions(conditions: FilterCondition<any, Set<number>>[
     }
 
     const queryResultSets = await Promise.all(queryConds.map(c => c.query(c.value)));
-    
+
     if (builderSet !== null) {
       queryResultSets.push(builderSet);
     }
@@ -198,7 +198,7 @@ export async function getSessionDetail(id: number): Promise<SessionDetail | null
   }
 }
 
-export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+export async function getLeaderboard(): Promise<{ sessions: number, biggestPot: number, entries: LeaderboardEntry[] }> {
   const tagCondition: FilterCondition<string[], Set<number>> = {
     field: 'tags',
     type: 'query',
@@ -229,5 +229,9 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
     }
   }
 
-  return [...byPlayer.values()].sort((a, b) => b.net - a.net)
+  return {
+    sessions: sessions.length,
+    biggestPot: sessions.reduce((max, s) => Math.max(max, s.total_pot), 0),
+    entries: [...byPlayer.values()].sort((a, b) => b.net - a.net)
+  }
 }
