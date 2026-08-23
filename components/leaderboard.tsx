@@ -74,10 +74,10 @@ export function Leaderboard({
               <TableRow>
                 <TableHead className="w-12">#</TableHead>
                 <TableHead>Player</TableHead>
-                <TableHead className="text-right">Sessions</TableHead>
-                <TableHead className="hidden text-right sm:table-cell">Buy-in</TableHead>
-                <TableHead className="hidden text-right sm:table-cell">Cash-out</TableHead>
                 <TableHead className="text-right">Net</TableHead>
+                <TableHead className="text-right">Buy-in</TableHead>
+                <TableHead className="text-right">Cash-out</TableHead>
+                <TableHead className="text-right">Sessions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -97,15 +97,6 @@ export function Leaderboard({
                       <SquareArrowOutUpRight className="size-3" />
                     </Link>
                   </TableCell>
-                  <TableCell className="text-right tabular-nums text-muted-foreground">
-                    {entry.sessions}
-                  </TableCell>
-                  <TableCell className="hidden text-right tabular-nums text-muted-foreground sm:table-cell">
-                    {formatMoney(entry.total_buy_in)}
-                  </TableCell>
-                  <TableCell className="hidden text-right tabular-nums text-muted-foreground sm:table-cell">
-                    {formatMoney(entry.total_cash_out)}
-                  </TableCell>
                   <TableCell className="text-right">
                     <span
                       className="font-semibold tabular-nums"
@@ -116,6 +107,15 @@ export function Leaderboard({
                     >
                       {formatSigned(entry.net)}
                     </span>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                    {formatMoney(entry.total_buy_in)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                    {formatMoney(entry.total_cash_out)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                    {entry.sessions}
                   </TableCell>
                 </TableRow>
               ))}
