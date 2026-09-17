@@ -1,16 +1,28 @@
 'use client'
 
 import { useMemo, useState } from "react";
+import { Plus, Trophy } from "lucide-react";
 import DeckCard, { SUIT_SYMBOLS } from "./card";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuPortal, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuPortal,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Card as CardT, HandPlayer } from "@/lib/types";
-import { Player } from "@/lib/types";
+import { Card as CardT, HandPlayer, Player } from "@/lib/types";
 import { Label } from "./ui/label";
 import NumberInput from "./number-input";
 import { Switch } from "./ui/switch";
+import { cn } from "@/lib/utils";
 
 type Board = {
   flop1: CardT | null
@@ -20,8 +32,12 @@ type Board = {
   river: CardT | null
 }
 
+type CardSize = "xs" | "sm" | "md";
+
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 const SUITS = ['clubs', 'diamonds', 'hearts', 'spades'];
+const EMPTY_CARD: CardT = { suit: '', rank: '' };
+const isEmptyCard = (c: CardT) => !c.suit || !c.rank;
 
 export default function SessionHands({ players }: { players: Player[] }) {
   const [board, setBoard] = useState<Board>({
@@ -33,193 +49,239 @@ export default function SessionHands({ players }: { players: Player[] }) {
   })
   const [handPlayers, setHandPlayers] = useState<HandPlayer[]>([])
 
+  const setBoardCard = (key: keyof Board) => (suit: string, rank: string) =>
+    setBoard((prev) => ({ ...prev, [key]: { suit, rank } }))
+
   return (
-    <div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Add Hand</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-card-foreground">Board</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-center">
-              <div className="flex flex-col items-center space-y-2">
-                <DeckCard suit={board.flop1?.suit || ''} rank={board.flop1?.rank || ''} />
-                <CardSelect value={board.flop1 ? `${board.flop1.suit}-${board.flop1.rank}` : ''} onValueChange={(suit, rank) => {
-                  setBoard((prev) => ({ ...prev, flop1: { suit, rank } }))
-                }} />
-                <label>Flop</label>
+    <Card>
+      <CardHeader>
+        <CardTitle>Add Hand</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <section className="space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Board</h3>
+          <div className="flex items-start gap-5 overflow-x-auto pb-1">
+            <div className="space-y-1.5">
+              <div className="flex gap-1.5">
+                <CardSlot card={board.flop1} onChange={setBoardCard("flop1")} />
+                <CardSlot card={board.flop2} onChange={setBoardCard("flop2")} />
+                <CardSlot card={board.flop3} onChange={setBoardCard("flop3")} />
               </div>
-              <div className="flex flex-col items-center space-y-2">
-                <DeckCard suit={board.flop2?.suit || ''} rank={board.flop2?.rank || ''} />
-                <CardSelect value={board.flop2 ? `${board.flop2.suit}-${board.flop2.rank}` : ''} onValueChange={(suit, rank) => {
-                  setBoard((prev) => ({ ...prev, flop2: { suit, rank } }))
-                }} />
-                <label>Flop</label>
-              </div>
-              <div className="flex flex-col items-center space-y-2">
-                <DeckCard suit={board.flop3?.suit || ''} rank={board.flop3?.rank || ''} />
-                <CardSelect value={board.flop3 ? `${board.flop3.suit}-${board.flop3.rank}` : ''} onValueChange={(suit, rank) => {
-                  setBoard((prev) => ({ ...prev, flop3: { suit, rank } }))
-                }} />
-                <label>Flop</label>
-              </div>
-              <div className="flex flex-col items-center space-y-2">
-                <DeckCard suit={board.turn?.suit || ''} rank={board.turn?.rank || ''} />
-                <CardSelect value={board.turn ? `${board.turn.suit}-${board.turn.rank}` : ''} onValueChange={(suit, rank) => {
-                  setBoard((prev) => ({ ...prev, turn: { suit, rank } }))
-                }} />
-                <label>Turn</label>
-              </div>
-              <div className="flex flex-col items-center space-y-2">
-                <DeckCard suit={board.river?.suit || ''} rank={board.river?.rank || ''} />
-                <CardSelect value={board.river ? `${board.river.suit}-${board.river.rank}` : ''} onValueChange={(suit, rank) => {
-                  setBoard((prev) => ({ ...prev, river: { suit, rank } }))
-                }} />
-                <label>River</label>
-              </div>
+              <p className="text-center text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Flop</p>
+            </div>
+            <div className="space-y-1.5">
+              <CardSlot card={board.turn} onChange={setBoardCard("turn")} />
+              <p className="text-center text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Turn</p>
+            </div>
+            <div className="space-y-1.5">
+              <CardSlot card={board.river} onChange={setBoardCard("river")} />
+              <p className="text-center text-[10px] font-medium uppercase tracking-widest text-muted-foreground">River</p>
             </div>
           </div>
-          <div className="space-y-2">
-            <h2 className="text-sm font-semibold text-card-foreground">Players</h2>
-            <div>
+        </section>
+
+        <section className="space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Players</h3>
+          {handPlayers.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No players added to this hand yet.</p>
+          ) : (
+            <ul className="space-y-1.5">
               {handPlayers.map((p, i) => {
-                const plauerName = players.find(pl => pl.id === p.player_id)?.name ?? "Unknown"
+                const player = players.find((pl) => pl.id === p.player_id)
                 return (
-                  <div key={i}>
-                    <p>{plauerName} <span>{p.is_winner ? "(won $" + p.amount_won + ")" : ""}</span></p>
-                    <div className="flex flex-col items-center space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-2">
-                      <DeckCard suit={p.card1.suit} rank={p.card1.rank} />
-                      <DeckCard suit={p.card2.suit} rank={p.card2.rank} />
+                  <li
+                    key={`${p.player_id}-${i}`}
+                    className="flex items-center gap-3 rounded-xl border border-border px-3 py-1.5"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {player?.name ?? "Unknown"}
+                        {player?.nickname ? (
+                          <span className="font-normal text-muted-foreground"> ({player.nickname})</span>
+                        ) : null}
+                      </p>
+                      {p.is_winner && (
+                        <p className="flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                          <Trophy className="size-3" /> Won ${p.amount_won}
+                        </p>
+                      )}
                     </div>
-                  </div>
+                    <div className="flex shrink-0 gap-1">
+                      <DeckCard suit={p.card1.suit} rank={p.card1.rank} size="xs" />
+                      <DeckCard suit={p.card2.suit} rank={p.card2.rank} size="xs" />
+                    </div>
+                  </li>
                 )
               })}
-            </div>
-            <AddPlayer players={players} onAddPlayer={player => setHandPlayers(prev => [...prev, player])} />
-          </div>
-
-        </CardContent>
-      </Card>
-    </div >
+            </ul>
+          )}
+          <AddPlayer
+            players={players}
+            onAddPlayer={(player) => setHandPlayers((prev) => [...prev, player])}
+          />
+        </section>
+      </CardContent>
+    </Card>
   )
 }
 
-function CardSelect({ value, onValueChange }: { value: string, onValueChange: (suit: string, rank: string) => void }) {
+/**
+ * A single card slot. The card itself is the picker trigger —
+ * click it to choose a rank and suit. Empty slots show a placeholder.
+ */
+function CardSlot({
+  card,
+  onChange,
+  size = "sm",
+}: {
+  card: CardT | null
+  onChange: (suit: string, rank: string) => void
+  size?: CardSize
+}) {
   return (
-    <div>
-      <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="outline">Select</Button>} />
-        <DropdownMenuContent>
-          <DropdownMenuGroup>
-            {
-              RANKS.map((rank) => (
-                <DropdownMenuSub key={rank}>
-                  <DropdownMenuSubTrigger>{rank}</DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuRadioGroup
-                        value={value}
-                        onValueChange={(val) => {
-                          const [suit] = val.split('-');
-                          onValueChange(suit, rank);
-                        }}
-                      >
-                        {
-                          SUITS.map((suit) => (
-                            <DropdownMenuRadioItem value={`${suit}-${rank}`} key={suit}>{SUIT_SYMBOLS[suit]}</DropdownMenuRadioItem>
-                          ))
-                        }
-                      </DropdownMenuRadioGroup>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-              ))
-            }
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <button
+            type="button"
+            title={card ? `${card.rank} of ${card.suit} — click to change` : "Pick a card"}
+            className="relative shrink-0 rounded-lg outline-none transition duration-150 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {card ? (
+              <DeckCard suit={card.suit} rank={card.rank} size={size} />
+            ) : (
+              <>
+                <DeckCard variant="placeholder" size={size} />
+                <Plus className="pointer-events-none absolute inset-0 m-auto size-5 text-muted-foreground/50" />
+              </>
+            )}
+          </button>
+        }
+      />
+      <DropdownMenuContent align="start">
+        <DropdownMenuGroup>
+          {RANKS.map((rank) => (
+            <DropdownMenuSub key={rank}>
+              <DropdownMenuSubTrigger>{rank}</DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  <DropdownMenuRadioGroup
+                    value={card ? `${card.suit}-${card.rank}` : ""}
+                    onValueChange={(val) => {
+                      const [suit] = val.split("-");
+                      onChange(suit, rank);
+                    }}
+                  >
+                    {SUITS.map((suit) => (
+                      <DropdownMenuRadioItem value={`${suit}-${rank}`} key={suit} closeOnClick>
+                        <span className={cn("font-semibold", suit === 'hearts' || suit === 'diamonds' ? "text-red-600" : "text-foreground")}>
+                          {SUIT_SYMBOLS[suit]}
+                        </span>
+                        <span className="ml-1 capitalize text-muted-foreground">{suit}</span>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+          ))}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
 function AddPlayer({ players, onAddPlayer }: { players: Player[], onAddPlayer: (player: HandPlayer) => void }) {
   const [handPlayer, setHandPlayer] = useState<HandPlayer>({
     player_id: -1,
-    card1: { suit: '', rank: '' },
-    card2: { suit: '', rank: '' },
+    card1: { ...EMPTY_CARD },
+    card2: { ...EMPTY_CARD },
     is_winner: false,
-    amount_won: 0
+    amount_won: 0,
   })
 
   const items = useMemo(() => {
     return [
       { label: 'Select player…', value: -1 },
-      ...players.map(p => ({ label: `${p.name} ${p.nickname ? `(${p.nickname})` : ''}`, value: p.id }))
+      ...players.map(p => ({ label: `${p.name}${p.nickname ? ` (${p.nickname})` : ''}`, value: p.id }))
     ]
   }, [players])
 
   function handleAddPlayer() {
-    setHandPlayer(prev => ({ ...prev, player_id: -1, card1: { suit: '', rank: '' }, card2: { suit: '', rank: '' }, is_winner: false, amount_won: 0 }))
     onAddPlayer(handPlayer)
+    setHandPlayer({
+      player_id: -1,
+      card1: { ...EMPTY_CARD },
+      card2: { ...EMPTY_CARD },
+      is_winner: false,
+      amount_won: 0,
+    })
   }
 
+  const toSlot = (c: CardT): CardT | null => (isEmptyCard(c) ? null : c)
+
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-card-foreground">Add Players</h3>
+    <div className="rounded-xl border border-dashed border-border p-3">
+      <div className="flex flex-wrap items-start gap-x-4 gap-y-3">
+        <div className="min-w-44 flex-1 space-y-1.5">
+          <Label>Player</Label>
+          <Select
+            value={handPlayer.player_id}
+            onValueChange={(v) => setHandPlayer((prev) => ({ ...prev, player_id: (v as number) ?? -1 }))}
+            items={items}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {items.map((p) => (
+                  <SelectItem key={p.value} value={p.value}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <div className="space-y-2">
-            <Label htmlFor="players">Players</Label>
-            <Select value={handPlayer.player_id} onValueChange={(v) => setHandPlayer(prev => ({ ...prev, player_id: v || -1 }))} items={items}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {
-                    items.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>
-                        {p.label}
-                      </SelectItem>
-                    ))
-                  }
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="winner">Is Winner</Label>
-            <Switch checked={handPlayer.is_winner} onCheckedChange={(v) => setHandPlayer(prev => ({ ...prev, is_winner: v }))} />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount Won</Label>
-            <NumberInput value={String(handPlayer.amount_won)} onChange={(v) => {
-              const vf = Number.parseFloat(v);
-              setHandPlayer(prev => ({ ...prev, amount_won: v === '' ? 0 : Number.parseFloat(v) }))
-            }} placeholder="0" />
+        <div className="space-y-1.5">
+          <Label>Hole cards</Label>
+          <div className="flex gap-1.5">
+            <CardSlot
+              size="xs"
+              card={toSlot(handPlayer.card1)}
+              onChange={(suit, rank) => setHandPlayer((prev) => ({ ...prev, card1: { suit, rank } }))}
+            />
+            <CardSlot
+              size="xs"
+              card={toSlot(handPlayer.card2)}
+              onChange={(suit, rank) => setHandPlayer((prev) => ({ ...prev, card2: { suit, rank } }))}
+            />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="players">Cards</Label>
-          <div className="flex flex-col items-center space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-2">
-            <div className="flex flex-col items-center space-y-2">
-              <DeckCard suit={handPlayer.card1.suit} rank={handPlayer.card1.rank} />
-              <CardSelect value={`${handPlayer.card1.suit}-${handPlayer.card1.rank}`} onValueChange={(suit, rank) => setHandPlayer(prev => ({ ...prev, card1: { suit, rank } }))} />
-            </div>
-            <div className="flex flex-col items-center space-y-2">
-              <DeckCard suit={handPlayer.card2.suit} rank={handPlayer.card2.rank} />
-              <CardSelect value={`${handPlayer.card2.suit}-${handPlayer.card2.rank}`} onValueChange={(suit, rank) => {
-                setHandPlayer(prev => ({ ...prev, card2: { suit, rank } }))
-              }} />
-            </div>
+        <div className="space-y-1.5">
+          <Label>Result</Label>
+          <div className="flex h-10 items-center gap-2">
+            <Switch
+              checked={handPlayer.is_winner}
+              onCheckedChange={(v) => setHandPlayer((prev) => ({ ...prev, is_winner: v }))}
+            />
+            <span className="text-sm text-muted-foreground">Won</span>
+            {handPlayer.is_winner && (
+              <NumberInput
+                value={String(handPlayer.amount_won)}
+                onChange={(v) => setHandPlayer((prev) => ({ ...prev, amount_won: v === '' ? 0 : Number.parseFloat(v) }))}
+                placeholder="0"
+              />
+            )}
           </div>
         </div>
-        <Button onClick={handleAddPlayer}>Add</Button>
+
+        <Button onClick={handleAddPlayer} disabled={handPlayer.player_id === -1} className="self-end">
+          Add player
+        </Button>
       </div>
     </div>
   )

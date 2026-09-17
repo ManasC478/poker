@@ -103,3 +103,16 @@ export type SessionFilter = {
   playerId: number
   locked: 'all' | 'true' | 'false'
 }
+
+export type Card = {
+  suit: string
+  rank: string
+}
+
+export type HandPlayer = {
+  player_id: number
+  card1: Card
+  card2: Card
+  is_winner: boolean
+  amount_won: number
+}
