@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from "react";
-import { Plus, Trophy } from "lucide-react";
+import { Plus, Trash2, Trophy } from "lucide-react";
 import DeckCard, { SUIT_SYMBOLS } from "./card";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -23,6 +23,7 @@ import { Label } from "./ui/label";
 import NumberInput from "./number-input";
 import { Switch } from "./ui/switch";
 import { cn } from "@/lib/utils";
+import { Separator } from "./ui/separator";
 
 type Board = {
   flop1: CardT | null
@@ -47,10 +48,15 @@ export default function SessionHands({ players }: { players: Player[] }) {
     turn: null,
     river: null,
   })
+  const [notes, setNotes] = useState<string>('')
   const [handPlayers, setHandPlayers] = useState<HandPlayer[]>([])
 
   const setBoardCard = (key: keyof Board) => (suit: string, rank: string) =>
     setBoard((prev) => ({ ...prev, [key]: { suit, rank } }))
+
+  function handleAddHand() {
+    console.log(handPlayers, notes)
+  }
 
   return (
     <Card>
@@ -60,7 +66,7 @@ export default function SessionHands({ players }: { players: Player[] }) {
       <CardContent className="space-y-6">
         <section className="space-y-2">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Board</h3>
-          <div className="flex items-start gap-5 overflow-x-auto pb-1">
+          <div className="flex flex-wrap items-start gap-5 overflow-x-auto pb-1">
             <div className="space-y-1.5">
               <div className="flex gap-1.5">
                 <CardSlot card={board.flop1} onChange={setBoardCard("flop1")} />
@@ -79,34 +85,39 @@ export default function SessionHands({ players }: { players: Player[] }) {
             </div>
           </div>
         </section>
-
+        <Separator />
         <section className="space-y-2">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Players</h3>
           {handPlayers.length === 0 ? (
             <p className="text-sm text-muted-foreground">No players added to this hand yet.</p>
           ) : (
-            <ul className="space-y-1.5">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {handPlayers.map((p, i) => {
                 const player = players.find((pl) => pl.id === p.player_id)
                 return (
                   <li
                     key={`${p.player_id}-${i}`}
-                    className="flex items-center gap-3 rounded-xl border border-border px-3 py-1.5"
+                    className="space-y-2 px-3 py-1.5 rounded-lg border"
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {player?.name ?? "Unknown"}
-                        {player?.nickname ? (
-                          <span className="font-normal text-muted-foreground"> ({player.nickname})</span>
-                        ) : null}
-                      </p>
-                      {p.is_winner && (
-                        <p className="flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
-                          <Trophy className="size-3" /> Won ${p.amount_won}
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {player?.name ?? "Unknown"}
+                          {player?.nickname ? (
+                            <span className="font-normal text-muted-foreground"> ({player.nickname})</span>
+                          ) : null}
                         </p>
-                      )}
+                        {p.is_winner && (
+                          <p className="flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                            <Trophy className="size-3" /> Won ${p.amount_won}
+                          </p>
+                        )}
+                      </div>
+                      <Button size="icon" variant="outline" onClick={
+                        () => setHandPlayers((prev) => prev.filter(pl => pl.player_id !== p.player_id))
+                      }><Trash2 className="size-4" /></Button>
                     </div>
-                    <div className="flex shrink-0 gap-1">
+                    <div className="flex gap-1">
                       <DeckCard suit={p.card1.suit} rank={p.card1.rank} size="xs" />
                       <DeckCard suit={p.card2.suit} rank={p.card2.rank} size="xs" />
                     </div>
@@ -116,10 +127,27 @@ export default function SessionHands({ players }: { players: Player[] }) {
             </ul>
           )}
           <AddPlayer
-            players={players}
+            players={players.filter(p => !handPlayers.find(pl => pl.player_id === p.id))}
             onAddPlayer={(player) => setHandPlayers((prev) => [...prev, player])}
           />
         </section>
+        <Separator />
+        <section>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-foreground">Notes</span>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="e.g. $1/$2 NLH"
+              className="h-20 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
+            />
+          </label>
+        </section>
+        <div className="flex justify-end">
+          <Button onClick={handleAddHand}>
+            Add Hand
+          </Button>
+        </div>
       </CardContent>
     </Card>
   )
@@ -145,13 +173,13 @@ function CardSlot({
           <button
             type="button"
             title={card ? `${card.rank} of ${card.suit} — click to change` : "Pick a card"}
-            className="relative shrink-0 rounded-lg outline-none transition duration-150 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-ring"
+            className="relative shrink-0 rounded-lg"
           >
             {card ? (
-              <DeckCard suit={card.suit} rank={card.rank} size={size} />
+              <DeckCard suit={card.suit} rank={card.rank} size={size} className="hover:border-gray-400" />
             ) : (
               <>
-                <DeckCard variant="placeholder" size={size} />
+                <DeckCard variant="placeholder" size={size} className="hover:border-gray-400" />
                 <Plus className="pointer-events-none absolute inset-0 m-auto size-5 text-muted-foreground/50" />
               </>
             )}
@@ -221,7 +249,7 @@ function AddPlayer({ players, onAddPlayer }: { players: Player[], onAddPlayer: (
   const toSlot = (c: CardT): CardT | null => (isEmptyCard(c) ? null : c)
 
   return (
-    <div className="rounded-xl border border-dashed border-border p-3">
+    <div className="rounded-xl border p-3">
       <div className="flex flex-wrap items-start gap-x-4 gap-y-3">
         <div className="min-w-44 flex-1 space-y-1.5">
           <Label>Player</Label>

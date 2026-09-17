@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from "@/lib/utils";
+import { HTMLAttributes } from "react";
 
 type CardSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 type Variant = 'default' | 'placeholder'
@@ -21,17 +22,17 @@ const SIZE_STYLING: Record<CardSize, string> = {
 }
 
 
-export default function Card({ suit='', rank='', variant='default', size="md" }: { suit?: string, rank?: string, variant?: Variant, size?: CardSize }) {
+export default function Card({ suit='', rank='', variant='default', size="md", className }: { suit?: string, rank?: string, variant?: Variant, size?: CardSize, className?: HTMLAttributes<HTMLDivElement>["className"]}) {
   const isRed = suit === 'hearts' || suit === 'diamonds';
 
   if (variant === 'placeholder') {
     return (
-      <div className={cn('rounded-lg border-2 border-gray-300 bg-white flex flex-col justify-between p-1', SIZE_STYLING[size])}>
+      <div className={cn('rounded-lg border-2 border-gray-300 bg-white flex flex-col justify-between p-1', SIZE_STYLING[size], className)}>
       </div>
     )
   }
   return (
-    <div className={cn('rounded-lg border-2 border-gray-300 bg-white flex flex-col justify-between p-1', SIZE_STYLING[size], isRed ? 'text-red-600' : 'text-gray-900')}>
+    <div className={cn('rounded-lg border-2 border-gray-300 bg-white flex flex-col justify-between p-1', SIZE_STYLING[size], isRed ? 'text-red-600' : 'text-gray-900', className)}>
       <div className="text-sm font-bold leading-none self-start">{rank}{SUIT_SYMBOLS[suit]}</div>
       <div className="text-3xl self-center">{SUIT_SYMBOLS[suit]}</div>
       <div className="text-sm font-bold leading-none self-end rotate-180">{rank}{SUIT_SYMBOLS[suit]}</div>
