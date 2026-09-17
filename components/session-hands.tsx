@@ -83,9 +83,20 @@ export default function SessionHands({ players }: { players: Player[] }) {
           <div className="space-y-2">
             <h2 className="text-sm font-semibold text-card-foreground">Players</h2>
             <div>
-
+              {handPlayers.map((p, i) => {
+                const plauerName = players.find(pl => pl.id === p.player_id)?.name ?? "Unknown"
+                return (
+                  <div key={i}>
+                    <p>{plauerName} <span>{p.is_winner ? "(won $" + p.amount_won + ")" : ""}</span></p>
+                    <div className="flex flex-col items-center space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-2">
+                      <DeckCard suit={p.card1.suit} rank={p.card1.rank} />
+                      <DeckCard suit={p.card2.suit} rank={p.card2.rank} />
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-            <AddPlayer players={players} />
+            <AddPlayer players={players} onAddPlayer={player => setHandPlayers(prev => [...prev, player])} />
           </div>
 
         </CardContent>
@@ -132,8 +143,7 @@ function CardSelect({ value, onValueChange }: { value: string, onValueChange: (s
   )
 }
 
-function AddPlayer({ players, onAddPlayer }: { players: Player[], onAddPlayer?: () => void }) {
-  const [playerId, setPlayerId] = useState<number>(-1)
+function AddPlayer({ players, onAddPlayer }: { players: Player[], onAddPlayer: (player: HandPlayer) => void }) {
   const [handPlayer, setHandPlayer] = useState<HandPlayer>({
     player_id: -1,
     card1: { suit: '', rank: '' },
@@ -149,6 +159,11 @@ function AddPlayer({ players, onAddPlayer }: { players: Player[], onAddPlayer?: 
     ]
   }, [players])
 
+  function handleAddPlayer() {
+    setHandPlayer(prev => ({ ...prev, player_id: -1, card1: { suit: '', rank: '' }, card2: { suit: '', rank: '' }, is_winner: false, amount_won: 0 }))
+    onAddPlayer(handPlayer)
+  }
+
   return (
     <div className="space-y-2">
       <h3 className="text-sm font-semibold text-card-foreground">Add Players</h3>
@@ -157,7 +172,7 @@ function AddPlayer({ players, onAddPlayer }: { players: Player[], onAddPlayer?: 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div className="space-y-2">
             <Label htmlFor="players">Players</Label>
-            <Select value={playerId} onValueChange={(v) => setPlayerId(v || -1)} items={items}>
+            <Select value={handPlayer.player_id} onValueChange={(v) => setHandPlayer(prev => ({ ...prev, player_id: v || -1 }))} items={items}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -184,8 +199,7 @@ function AddPlayer({ players, onAddPlayer }: { players: Player[], onAddPlayer?: 
             <Label htmlFor="amount">Amount Won</Label>
             <NumberInput value={String(handPlayer.amount_won)} onChange={(v) => {
               const vf = Number.parseFloat(v);
-              console.log(vf);
-              setHandPlayer(prev => ({ ...prev, amount_won: v==='' ? 0 : Number.parseFloat(v) }))
+              setHandPlayer(prev => ({ ...prev, amount_won: v === '' ? 0 : Number.parseFloat(v) }))
             }} placeholder="0" />
           </div>
         </div>
@@ -205,6 +219,7 @@ function AddPlayer({ players, onAddPlayer }: { players: Player[], onAddPlayer?: 
             </div>
           </div>
         </div>
+        <Button onClick={handleAddPlayer}>Add</Button>
       </div>
     </div>
   )
