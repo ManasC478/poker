@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
-import { SessionDetailView } from "@/components/session-detail"
-import { getMomentTypes, getPlayers, getSessionDetail } from "@/lib/data"
+import { getHands, getMomentTypes, getPlayers, getSessionDetail } from "@/lib/data"
 import Page from "@/components/page"
+import Session from "@/components/session"
 
 export const dynamic = "force-dynamic"
 
@@ -10,16 +10,17 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   const sessionId = Number.parseInt(id, 10)
   if (Number.isNaN(sessionId)) notFound()
 
-  const [session, players, momentTypes] = await Promise.all([
+  const [session, players, momentTypes, hands] = await Promise.all([
     getSessionDetail(sessionId),
     getPlayers(),
     getMomentTypes(),
+    getHands(sessionId)
   ])
   if (!session) notFound()
 
   return (
     <Page>
-      <SessionDetailView session={session} players={players} momentTypes={momentTypes} />
+      <Session session={session} players={players} momentTypes={momentTypes} hands={hands} />
     </Page>
   )
 }

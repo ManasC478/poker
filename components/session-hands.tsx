@@ -33,7 +33,7 @@ const SUITS = ['clubs', 'diamonds', 'hearts', 'spades'];
 const EMPTY_CARD: CardT = { suit: '', rank: '' };
 const isEmptyCard = (c: CardT) => !c.suit || !c.rank;
 
-export default function SessionHands({ session, players, setError }: { session: SessionDetail, players: Player[], setError: Dispatch<SetStateAction<string | null>> }) {
+export default function SessionHands({ session, players, setError, hands }: { session: SessionDetail, players: Player[], setError: Dispatch<SetStateAction<string | null>>, hands: Hand[] }) {
   const [pending, startTransition] = useTransition()
   const [board, setBoard] = useState<Board>({
     flop1: null,
