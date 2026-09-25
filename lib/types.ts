@@ -109,6 +109,14 @@ export type Card = {
   rank: string
 }
 
+export type Board = {
+  flop1: Card | null
+  flop2: Card | null
+  flop3: Card | null
+  turn: Card | null
+  river: Card | null
+}
+
 export type HandPlayer = {
   player_id: number
   card1: Card

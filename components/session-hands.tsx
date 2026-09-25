@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from "react";
+import { Dispatch, SetStateAction, useMemo, useState, useTransition } from "react";
 import { Plus, Trash2, Trophy } from "lucide-react";
 import DeckCard, { SUIT_SYMBOLS } from "./card";
 import { Button } from "./ui/button";
@@ -18,20 +18,13 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Card as CardT, HandPlayer, Player } from "@/lib/types";
+import { Board, Card as CardT, HandPlayer, Player, SessionDetail } from "@/lib/types";
 import { Label } from "./ui/label";
 import NumberInput from "./number-input";
 import { Switch } from "./ui/switch";
 import { cn } from "@/lib/utils";
 import { Separator } from "./ui/separator";
-
-type Board = {
-  flop1: CardT | null
-  flop2: CardT | null
-  flop3: CardT | null
-  turn: CardT | null
-  river: CardT | null
-}
+import { createHand } from "@/lib/actions";
 
 type CardSize = "xs" | "sm" | "md";
 
@@ -40,7 +33,8 @@ const SUITS = ['clubs', 'diamonds', 'hearts', 'spades'];
 const EMPTY_CARD: CardT = { suit: '', rank: '' };
 const isEmptyCard = (c: CardT) => !c.suit || !c.rank;
 
-export default function SessionHands({ players }: { players: Player[] }) {
+export default function SessionHands({ session, players, setError }: { session: SessionDetail, players: Player[], setError: Dispatch<SetStateAction<string | null>> }) {
+  const [pending, startTransition] = useTransition()
   const [board, setBoard] = useState<Board>({
     flop1: null,
     flop2: null,
@@ -54,8 +48,24 @@ export default function SessionHands({ players }: { players: Player[] }) {
   const setBoardCard = (key: keyof Board) => (suit: string, rank: string) =>
     setBoard((prev) => ({ ...prev, [key]: { suit, rank } }))
 
-  function handleAddHand() {
-    console.log(handPlayers, notes)
+  async function handleAddHand() {
+    setError(null)
+    startTransition(async () => {
+      const res = await createHand(session.id, board, handPlayers, notes)
+      if (res.error) {
+        setError(res.error)
+        return
+      }
+      setBoard({
+        flop1: null,
+        flop2: null,
+        flop3: null,
+        turn: null,
+        river: null,
+      })
+      setNotes('')
+      setHandPlayers([])
+    })
   }
 
   return (
@@ -144,7 +154,7 @@ export default function SessionHands({ players }: { players: Player[] }) {
           </label>
         </section>
         <div className="flex justify-end">
-          <Button onClick={handleAddHand}>
+          <Button onClick={handleAddHand} disabled={pending}>
             Add Hand
           </Button>
         </div>

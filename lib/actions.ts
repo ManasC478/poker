@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import type { ParticipantInput } from "@/lib/types"
+import type { Board, HandPlayer, ParticipantInput } from "@/lib/types"
 import { revalidatePath } from "next/cache"
 
 function revalidateSession(sessionId: number) {
@@ -301,5 +301,28 @@ export async function removeTag(tags: string[], sessionId: number) {
   if (error) return { error: error.message }
   revalidatePath("/")
   revalidatePath("/calendar")
+  return { ok: true }
+}
+
+export async function createHand(sessionId: number, board: Board, players: HandPlayer[], notes: string) {
+  const supabase = await createClient()
+  const { data, error: handError } = await supabase.from("hands").insert({ session_id: sessionId, notes }).select("id").single()
+
+  if (handError) return { error: handError.message }
+
+  const handCards = []
+  if (board.flop1) handCards.push({ hand_id: data.id, rank: board.flop1.rank, suit: board.flop1.suit, round: 'flop' })
+  if (board.flop2) handCards.push({ hand_id: data.id, rank: board.flop2.rank, suit: board.flop2.suit, round: 'flop' })
+  if (board.flop3) handCards.push({ hand_id: data.id, rank: board.flop3.rank, suit: board.flop3.suit, round: 'flop' })
+  if (board.turn) handCards.push({ hand_id: data.id, rank: board.turn.rank, suit: board.turn.suit, round: 'turn' })
+  if (board.river) handCards.push({ hand_id: data.id, rank: board.river.rank, suit: board.river.suit, round: 'river' })
+  console.log(handCards)
+  const { error: handCardsError } = await supabase.from("hand_cards").insert(handCards)
+  if (handCardsError) return { error: handCardsError.message }
+
+  const handPlayers = players.map(p => ({ hand_id: data.id, player_id: p.player_id, is_winner: p.is_winner, amount_won: p.amount_won, card_1_rank: p.card1.rank, card_1_suit: p.card1.suit, card_2_rank: p.card2.rank, card_2_suit: p.card2.suit }))
+  const { error: handPlayersError } = await supabase.from("hand_players").insert(handPlayers)
+  if (handPlayersError) return { error: handPlayersError.message }
+
   return { ok: true }
 }

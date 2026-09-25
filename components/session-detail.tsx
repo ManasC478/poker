@@ -770,7 +770,7 @@ export function SessionDetailView({
             </footer>
           </div>
         </TabsContent>
-        <TabsContent value="hands"><SessionHands players={players} /></TabsContent>
+        <TabsContent value="hands"><SessionHands session={session} players={players} setError={setError} /></TabsContent>
       </Tabs>
 
     </div>
