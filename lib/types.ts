@@ -124,3 +124,18 @@ export type HandPlayer = {
   is_winner: boolean
   amount_won: number
 }
+
+export type HandCard = {
+  rank: string
+  suit: string
+  round: 'flop' | 'turn' | 'river'
+}
+
+export type Hand = {
+  id: number
+  created_at: string
+  session_id: number
+  notes: string
+  hand_cards: HandCard[]
+  players: HandPlayer[]
+}

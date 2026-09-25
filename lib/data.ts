@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import type { Player, Session, SessionDetail, LeaderboardEntry, MomentType, MomentRow, FilterCondition } from "@/lib/types"
+import type { Player, Session, SessionDetail, LeaderboardEntry, MomentType, MomentRow, FilterCondition, Hand } from "@/lib/types"
 import { hasTagQueryFn } from "./db/filter/query"
 
 export async function getPlayers(): Promise<Player[]> {
@@ -234,4 +234,61 @@ export async function getLeaderboard(): Promise<{ sessions: number, biggestPot: 
     biggestPot: sessions.reduce((max, s) => Math.max(max, s.total_pot), 0),
     entries: [...byPlayer.values()].sort((a, b) => b.net - a.net)
   }
+}
+
+export async function getHands(sessionId: number): Promise<Hand[]> {
+ const supabase = await createClient()
+
+ const { data, error } = await supabase.from("hands").select("id, created_at, session_id, notes").eq("session_id", sessionId).order("created_at")
+ if (error) {
+   console.log("getHands error:", error.message)
+   return []
+ }
+
+ const handIds = data.map(d => d.id)
+ const { data: handCards, error: hcErr } = await supabase.from("hand_cards").select("hand_id, rank, suit, round").in("hand_id", handIds)
+ if (hcErr) {
+   console.log("getHands error:", hcErr.message)
+   return []
+ }
+ const { data: handPlayers, error: hpErr } = await supabase.from("hand_players").select("hand_id, player_id, card_1_rank, card_1_suit, card_2_rank, card_2_suit, is_winner, amount_won").in("hand_id", handIds)
+ if (hpErr) {
+   console.log("getHands error:", hpErr.message)
+   return []
+ }
+
+ const hands: Hand[] = data.map(d => {
+   const cards = handCards.filter(c => c.hand_id === d.id).map(c => {
+     return {
+       rank: c.rank,
+       suit: c.suit,
+       round: c.round
+     }
+   })
+   const players = handPlayers.filter(p => p.hand_id === d.id).map(p => {
+     return {
+       player_id: p.player_id,
+       card1: {
+         rank: p.card_1_rank,
+         suit: p.card_1_suit
+       },
+       card2: {
+         rank: p.card_2_rank,
+         suit: p.card_2_suit
+       },
+       is_winner: p.is_winner,
+       amount_won: p.amount_won
+     }
+   })
+   return {
+     id: d.id,
+     created_at: d.created_at,
+     session_id: d.session_id,
+     notes: d.notes,
+     hand_cards: cards,
+     players: players
+   }
+ })
+
+ return hands
 }
