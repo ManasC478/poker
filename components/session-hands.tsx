@@ -442,6 +442,8 @@ function HandRow({ hand, number, players }: { hand: Hand; number: number; player
         </ul>
       )}
 
+      <Separator />
+
       {hand.notes ? (
         <p className="text-sm italic text-muted-foreground">{hand.notes}</p>
       ) : null}
