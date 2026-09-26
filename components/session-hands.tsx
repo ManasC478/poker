@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Board, Card as CardT, HandPlayer, Player, SessionDetail } from "@/lib/types";
+import { Board, Card as CardT, Hand, HandPlayer, Player, SessionDetail } from "@/lib/types";
 import { Label } from "./ui/label";
 import NumberInput from "./number-input";
 import { Switch } from "./ui/switch";
@@ -69,6 +69,7 @@ export default function SessionHands({ session, players, setError, hands }: { se
   }
 
   return (
+    <div className="space-y-6">
     <Card>
       <CardHeader>
         <CardTitle>Add Hand</CardTitle>
@@ -160,6 +161,8 @@ export default function SessionHands({ session, players, setError, hands }: { se
         </div>
       </CardContent>
     </Card>
+    <HandHistory hands={hands} players={players} />
+    </div>
   )
 }
 
@@ -322,5 +325,126 @@ function AddPlayer({ players, onAddPlayer }: { players: Player[], onAddPlayer: (
         </Button>
       </div>
     </div>
+  )
+}
+
+/**
+ * Compact card for dense layouts (hand history). Still a real card,
+ * just small enough for a phone screen.
+ */
+function MiniCard({ suit, rank }: { suit: string; rank: string }) {
+  const isRed = suit === "hearts" || suit === "diamonds"
+  return (
+    <span
+      className={cn(
+        "inline-flex h-11 w-8 shrink-0 flex-col items-center justify-center rounded-md border bg-white leading-none",
+        isRed ? "border-red-200 text-red-600" : "border-gray-300 text-gray-900"
+      )}
+    >
+      <span className="text-[11px] font-bold">{rank}</span>
+      <span className="text-sm leading-none">{SUIT_SYMBOLS[suit]}</span>
+    </span>
+  )
+}
+
+/**
+ * Hand history: newest first, each hand showing the board by street,
+ * every player's hole cards, and the winner.
+ */
+function HandHistory({ hands, players }: { hands: Hand[]; players: Player[] }) {
+  const ordered = useMemo(() => [...hands].sort((a, b) => b.id - a.id), [hands])
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          Hand History
+          {hands.length > 0 && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+              {hands.length}
+            </span>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {ordered.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No hands recorded yet. Add the first one above.</p>
+        ) : (
+          <ul className="space-y-3">
+            {ordered.map((hand, i) => (
+              <HandRow key={hand.id} hand={hand} number={ordered.length - i} players={players} />
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function HandRow({ hand, number, players }: { hand: Hand; number: number; players: Player[] }) {
+  const flop = hand.hand_cards.filter((c) => c.round === "flop")
+  const turn = hand.hand_cards.filter((c) => c.round === "turn")
+  const river = hand.hand_cards.filter((c) => c.round === "river")
+  const hasBoard = flop.length > 0 || turn.length > 0 || river.length > 0
+  const time = new Date(hand.created_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+
+  const street = (label: string, cards: { rank: string; suit: string }[]) =>
+    cards.length > 0 && (
+      <div className="space-y-1">
+        <div className="flex gap-1">
+          {cards.map((c, j) => (
+            <MiniCard key={`${c.rank}-${c.suit}-${j}`} suit={c.suit} rank={c.rank} />
+          ))}
+        </div>
+        <p className="text-center text-[10px] font-medium uppercase tracking-widest text-muted-foreground">{label}</p>
+      </div>
+    )
+
+  return (
+    <li className="space-y-2.5 rounded-xl border p-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-foreground">Hand #{number}</p>
+        <p className="text-xs text-muted-foreground">{time}</p>
+      </div>
+
+      {hasBoard && (
+        <div className="flex flex-wrap items-start gap-3">
+          {street("Flop", flop)}
+          {street("Turn", turn)}
+          {street("River", river)}
+        </div>
+      )}
+
+      {hand.players.length > 0 && (
+        <ul className="divide-y divide-border">
+          {hand.players.map((p) => {
+            const player = players.find((pl) => pl.id === p.player_id)
+            return (
+              <li key={p.player_id} className="flex items-center gap-2 py-1.5">
+                <p className="min-w-0 flex-1 truncate text-sm text-foreground">
+                  <span className="font-medium">{player?.name ?? "Unknown"}</span>
+                  {player?.nickname ? (
+                    <span className="font-normal text-muted-foreground"> ({player.nickname})</span>
+                  ) : null}
+                  {p.is_winner && (
+                    <span className="ml-1.5 inline-flex items-center gap-0.5 whitespace-nowrap text-xs font-medium text-amber-600 dark:text-amber-400">
+                      <Trophy className="size-3" /> ${p.amount_won}
+                    </span>
+                  )}
+                </p>
+                <div className="flex shrink-0 gap-1">
+                  <MiniCard suit={p.card1.suit} rank={p.card1.rank} />
+                  <MiniCard suit={p.card2.suit} rank={p.card2.rank} />
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      {hand.notes ? (
+        <p className="text-sm italic text-muted-foreground">{hand.notes}</p>
+      ) : null}
+    </li>
   )
 }

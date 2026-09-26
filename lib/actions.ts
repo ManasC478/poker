@@ -316,7 +316,6 @@ export async function createHand(sessionId: number, board: Board, players: HandP
   if (board.flop3) handCards.push({ hand_id: data.id, rank: board.flop3.rank, suit: board.flop3.suit, round: 'flop' })
   if (board.turn) handCards.push({ hand_id: data.id, rank: board.turn.rank, suit: board.turn.suit, round: 'turn' })
   if (board.river) handCards.push({ hand_id: data.id, rank: board.river.rank, suit: board.river.suit, round: 'river' })
-  console.log(handCards)
   const { error: handCardsError } = await supabase.from("hand_cards").insert(handCards)
   if (handCardsError) return { error: handCardsError.message }
 
@@ -324,5 +323,6 @@ export async function createHand(sessionId: number, board: Board, players: HandP
   const { error: handPlayersError } = await supabase.from("hand_players").insert(handPlayers)
   if (handPlayersError) return { error: handPlayersError.message }
 
+  revalidateSession(sessionId)
   return { ok: true }
 }
