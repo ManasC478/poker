@@ -1,10 +1,8 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
-import Link from "next/link"
+import { Dispatch, SetStateAction, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import {
-  ArrowLeft,
   DollarSign,
   HandCoins,
   Loader2,
@@ -15,7 +13,6 @@ import {
   User,
   UserPlus,
   WalletCards,
-  X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -39,28 +36,28 @@ import {
   updateCashOut,
 } from "@/lib/actions"
 import type { MomentRow, MomentType, Player, SessionDetail } from "@/lib/types"
-import { formatLongDate, formatMoney, formatSigned, formatTime } from "@/lib/format"
+import { formatMoney, formatSigned, formatTime } from "@/lib/format"
 import NumberInput from "./number-input"
 import { Badge } from "./ui/badge"
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 import { settleUp } from "@/lib/utils"
 import { ScrollArea } from "./ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import { Card, CardContent } from "./ui/card"
 import SessionMetaForm from "./session-meta-form"
 
-export function SessionDetailView({
+export default function SessionDetail({
   session,
   players,
   momentTypes,
+  setError
 }: {
   session: SessionDetail
   players: Player[]
-  momentTypes: MomentType[]
+  momentTypes: MomentType[],
+  setError: Dispatch<SetStateAction<string | null>>
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
 
   const [newPlayerId, setNewPlayerId] = useState<number | "">("")
   const [newAmount, setNewAmount] = useState("")
@@ -282,42 +279,6 @@ export function SessionDetailView({
 
   return (
     <div>
-      <Link
-        href={`/calendar?date=${session.date}`}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" /> Back to calendar
-      </Link>
-
-      {error && (
-        <div className="flex items-center justify-between mb-4 rounded-lg bg-destructive/15 px-3 py-2 text-sm text-destructive">
-          <p>{error}</p>
-          <Button size="icon" variant="destructive" onClick={() => setError(null)}>
-            <X />
-          </Button>
-        </div>
-      )}
-
-
-      <header className="mb-8 space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wider text-primary">Session</p>
-        <div className="flex items-center gap-2">
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            {formatLongDate(session.date)}
-          </h1>
-          {
-            session.locked && (
-              <Tooltip>
-                <TooltipTrigger>
-                  <Lock className="inline text-destructive" />
-                </TooltipTrigger>
-                <TooltipContent><p>Session buy-ins and cash-outs are locked.</p></TooltipContent>
-              </Tooltip>
-            )
-          }
-        </div>
-      </header>
-
       <SessionMetaForm session={session} setError={setError} pending={pending} startTransition={startTransition} />
 
       {totals.playerResults.length > 0 && (

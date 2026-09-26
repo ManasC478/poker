@@ -103,3 +103,39 @@ export type SessionFilter = {
   playerId: number
   locked: 'all' | 'true' | 'false'
 }
+
+export type Card = {
+  suit: string
+  rank: string
+}
+
+export type Board = {
+  flop1: Card | null
+  flop2: Card | null
+  flop3: Card | null
+  turn: Card | null
+  river: Card | null
+}
+
+export type HandPlayer = {
+  player_id: number
+  card1: Card
+  card2: Card
+  is_winner: boolean
+  amount_won: number
+}
+
+export type HandCard = {
+  rank: string
+  suit: string
+  round: 'flop' | 'turn' | 'river'
+}
+
+export type Hand = {
+  id: number
+  created_at: string
+  session_id: number
+  notes: string
+  hand_cards: HandCard[]
+  players: HandPlayer[]
+}
