@@ -25,6 +25,8 @@ import { Switch } from "./ui/switch";
 import { cn } from "@/lib/utils";
 import { Separator } from "./ui/separator";
 import { createHand } from "@/lib/actions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { ScrollArea } from "./ui/scroll-area";
 
 type CardSize = "xs" | "sm" | "md";
 
@@ -34,6 +36,18 @@ const EMPTY_CARD: CardT = { suit: '', rank: '' };
 const isEmptyCard = (c: CardT) => !c.suit || !c.rank;
 
 export default function SessionHands({ session, players, setError, hands }: { session: SessionDetail, players: Player[], setError: Dispatch<SetStateAction<string | null>>, hands: Hand[] }) {
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <HandForm setError={setError} session={session} players={players} />
+      </div>
+      <HandHistory hands={hands} players={players} />
+    </div>
+  )
+}
+function HandForm({ session, players, setError }: { session: SessionDetail, players: Player[], setError: Dispatch<SetStateAction<string | null>> }) {
+  const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
   const [board, setBoard] = useState<Board>({
     flop1: null,
@@ -66,103 +80,104 @@ export default function SessionHands({ session, players, setError, hands }: { se
       setNotes('')
       setHandPlayers([])
     })
+    setOpen(false)
   }
 
   return (
-    <div className="space-y-6">
-    <Card>
-      <CardHeader>
-        <CardTitle>Add Hand</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <section className="space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Board</h3>
-          <div className="flex flex-wrap items-start gap-5 overflow-x-auto pb-1">
-            <div className="space-y-1.5">
-              <div className="flex gap-1.5">
-                <CardSlot card={board.flop1} onChange={setBoardCard("flop1")} />
-                <CardSlot card={board.flop2} onChange={setBoardCard("flop2")} />
-                <CardSlot card={board.flop3} onChange={setBoardCard("flop3")} />
+    <Dialog open={open} onOpenChange={(v) => setOpen(v)}>
+      <DialogTrigger render={Button}>Add Hand</DialogTrigger>
+      <DialogContent>
+        <ScrollArea className="h-96">
+          <DialogHeader>
+            <DialogTitle>Add Hand</DialogTitle>
+            <section className="space-y-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Board</h3>
+              <div className="flex flex-wrap items-start gap-5 overflow-x-auto pb-1">
+                <div className="space-y-1.5">
+                  <div className="flex gap-1.5">
+                    <CardSlot card={board.flop1} onChange={setBoardCard("flop1")} />
+                    <CardSlot card={board.flop2} onChange={setBoardCard("flop2")} />
+                    <CardSlot card={board.flop3} onChange={setBoardCard("flop3")} />
+                  </div>
+                  <p className="text-center text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Flop</p>
+                </div>
+                <div className="space-y-1.5">
+                  <CardSlot card={board.turn} onChange={setBoardCard("turn")} />
+                  <p className="text-center text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Turn</p>
+                </div>
+                <div className="space-y-1.5">
+                  <CardSlot card={board.river} onChange={setBoardCard("river")} />
+                  <p className="text-center text-[10px] font-medium uppercase tracking-widest text-muted-foreground">River</p>
+                </div>
               </div>
-              <p className="text-center text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Flop</p>
+            </section>
+            <Separator />
+            <section className="space-y-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Players</h3>
+              {handPlayers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No players added to this hand yet.</p>
+              ) : (
+                <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {handPlayers.map((p, i) => {
+                    const player = players.find((pl) => pl.id === p.player_id)
+                    return (
+                      <li
+                        key={`${p.player_id}-${i}`}
+                        className="space-y-2 px-3 py-1.5 rounded-lg border"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="truncate text-sm font-medium text-foreground">
+                              {player?.name ?? "Unknown"}
+                              {player?.nickname ? (
+                                <span className="font-normal text-muted-foreground"> ({player.nickname})</span>
+                              ) : null}
+                            </p>
+                            {p.is_winner && (
+                              <p className="flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                                <Trophy className="size-3" /> Won ${p.amount_won}
+                              </p>
+                            )}
+                          </div>
+                          <Button size="icon" variant="outline" onClick={
+                            () => setHandPlayers((prev) => prev.filter(pl => pl.player_id !== p.player_id))
+                          }><Trash2 className="size-4" /></Button>
+                        </div>
+                        <div className="flex gap-1">
+                          <DeckCard suit={p.card1.suit} rank={p.card1.rank} size="xs" />
+                          <DeckCard suit={p.card2.suit} rank={p.card2.rank} size="xs" />
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+              <AddPlayer
+                players={players.filter(p => !handPlayers.find(pl => pl.player_id === p.id))}
+                onAddPlayer={(player) => setHandPlayers((prev) => [...prev, player])}
+              />
+            </section>
+            <Separator />
+            <section>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-foreground">Notes</span>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="e.g. $1/$2 NLH"
+                  className="h-20 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
+                />
+              </label>
+            </section>
+            <div className="flex justify-end">
+              <Button onClick={handleAddHand} disabled={pending}>
+                Add Hand
+              </Button>
             </div>
-            <div className="space-y-1.5">
-              <CardSlot card={board.turn} onChange={setBoardCard("turn")} />
-              <p className="text-center text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Turn</p>
-            </div>
-            <div className="space-y-1.5">
-              <CardSlot card={board.river} onChange={setBoardCard("river")} />
-              <p className="text-center text-[10px] font-medium uppercase tracking-widest text-muted-foreground">River</p>
-            </div>
-          </div>
-        </section>
-        <Separator />
-        <section className="space-y-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Players</h3>
-          {handPlayers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No players added to this hand yet.</p>
-          ) : (
-            <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {handPlayers.map((p, i) => {
-                const player = players.find((pl) => pl.id === p.player_id)
-                return (
-                  <li
-                    key={`${p.player_id}-${i}`}
-                    className="space-y-2 px-3 py-1.5 rounded-lg border"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {player?.name ?? "Unknown"}
-                          {player?.nickname ? (
-                            <span className="font-normal text-muted-foreground"> ({player.nickname})</span>
-                          ) : null}
-                        </p>
-                        {p.is_winner && (
-                          <p className="flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
-                            <Trophy className="size-3" /> Won ${p.amount_won}
-                          </p>
-                        )}
-                      </div>
-                      <Button size="icon" variant="outline" onClick={
-                        () => setHandPlayers((prev) => prev.filter(pl => pl.player_id !== p.player_id))
-                      }><Trash2 className="size-4" /></Button>
-                    </div>
-                    <div className="flex gap-1">
-                      <DeckCard suit={p.card1.suit} rank={p.card1.rank} size="xs" />
-                      <DeckCard suit={p.card2.suit} rank={p.card2.rank} size="xs" />
-                    </div>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-          <AddPlayer
-            players={players.filter(p => !handPlayers.find(pl => pl.player_id === p.id))}
-            onAddPlayer={(player) => setHandPlayers((prev) => [...prev, player])}
-          />
-        </section>
-        <Separator />
-        <section>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-foreground">Notes</span>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. $1/$2 NLH"
-              className="h-20 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
-            />
-          </label>
-        </section>
-        <div className="flex justify-end">
-          <Button onClick={handleAddHand} disabled={pending}>
-            Add Hand
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-    <HandHistory hands={hands} players={players} />
-    </div>
+          </DialogHeader>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -347,37 +362,31 @@ function MiniCard({ suit, rank }: { suit: string; rank: string }) {
   )
 }
 
-/**
- * Hand history: newest first, each hand showing the board by street,
- * every player's hole cards, and the winner.
- */
 function HandHistory({ hands, players }: { hands: Hand[]; players: Player[] }) {
   const ordered = useMemo(() => [...hands].sort((a, b) => b.id - a.id), [hands])
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Hand History
-          {hands.length > 0 && (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              {hands.length}
-            </span>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div>
+      <h2 className="text-sm font-semibold text-card-foreground">
+        Hand History
+        {hands.length > 0 && (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            {hands.length}
+          </span>
+        )}
+      </h2>
+      <div>
         {ordered.length === 0 ? (
           <p className="text-sm text-muted-foreground">No hands recorded yet. Add the first one above.</p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {ordered.map((hand, i) => (
               <HandRow key={hand.id} hand={hand} number={ordered.length - i} players={players} />
             ))}
           </ul>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
@@ -450,3 +459,4 @@ function HandRow({ hand, number, players }: { hand: Hand; number: number; player
     </li>
   )
 }
+
