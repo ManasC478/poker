@@ -5,6 +5,10 @@ contract for the API. You do not need to read the route handler source code —
 this document describes every endpoint, its response shape, and its error cases.
 If an endpoint you need is missing, say so instead of guessing at a URL.
 
+This document is also served live by the API itself at `GET /api/docs`
+(`text/markdown`). If you already know the API base URL, fetch that instead of
+the GitHub URL — the live copy always matches the deployed code.
+
 ## Base URL
 
 - Production: `https://poker-nine-inky.vercel.app`
@@ -25,6 +29,11 @@ land; this document will be updated when that happens.)
   `2–10, J, Q, K, A`; suit is one of `spades, hearts, diamonds, clubs`.
 
 ## Endpoints
+
+### `GET /api/docs`
+
+This documentation, served live as `text/markdown`. Fetch this first if you
+only know the base URL.
 
 ### `GET /api/players`
 
