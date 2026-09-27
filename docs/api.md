@@ -100,11 +100,11 @@ Request body (JSON):
 - `start_time` (required): ISO datetime string.
 - `location`, `notes` (optional): default to `null` when omitted.
 
-Response `200`: `{ "id": 13 }` — the new session's id. Fetch
+Response `201`: `{ "id": 13 }` — the new session's id. Fetch
 `GET /api/sessions/{id}` for the full record.
 
 Errors: `400 { "error": "Missing date or start_time" }` when a required field
-is absent; `500 { "error": "Internal server error" }` on failure.
+is absent; `500 { "error": "<message>" }` with the underlying failure reason.
 
 ### `GET /api/sessions/{id}`
 

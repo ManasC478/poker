@@ -9,17 +9,24 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    
-    if (!body.date || !body.start_time) return NextResponse.json({ error: 'Missing date or start_time' }, { status: 400 })
+    const body = await req.json().catch(() => null)
 
-    body.location = body.location ?? null
-    body.notes = body.notes ?? null
+    if (!body?.date || !body?.start_time) {
+      return NextResponse.json({ error: "Missing date or start_time" }, { status: 400 })
+    }
 
-    const res = await createSession(body)
-    if (res.error) throw new Error(res.error)
-    return NextResponse.json(res)
+    const res = await createSession({
+      date: body.date,
+      start_time: body.start_time,
+      location: body.location ?? null,
+      notes: body.notes ?? null,
+    })
+    if (res.error) return NextResponse.json({ error: res.error }, { status: 500 })
+    return NextResponse.json(res, { status: 201 })
   } catch (e) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Internal server error" },
+      { status: 500 }
+    )
   }
 }
