@@ -15,8 +15,13 @@ the GitHub URL — the live copy always matches the deployed code.
 - Local dev: `http://localhost:3000`
 
 All endpoints return JSON. There is currently **no authentication** on these
-routes — they are public GETs. (Auth will be required once mutation endpoints
-land; this document will be updated when that happens.)
+routes — reads and writes are public, so don't share the base URL beyond people
+you trust until auth lands. (Auth will be required once API keys are added; this
+document will be updated when that happens.)
+
+CORS is enabled on all `/api/*` routes (`Access-Control-Allow-Origin: *`), so
+the API can be called from browser JavaScript on any origin. Server-side
+callers (curl, AI agents) are unaffected by CORS either way.
 
 ## Conventions
 
@@ -77,6 +82,29 @@ Response: array of
 }
 ```
 `start_time`, `location`, `notes` may be `null`. `net = cash_out - buy_in`.
+
+### `POST /api/sessions`
+
+Create a new session.
+
+Request body (JSON):
+```json
+{
+  "date": "2026-09-27",
+  "start_time": "2026-09-27T19:00:00",
+  "location": "Manas's place",
+  "notes": null
+}
+```
+- `date` (required): `YYYY-MM-DD`.
+- `start_time` (required): ISO datetime string.
+- `location`, `notes` (optional): default to `null` when omitted.
+
+Response `200`: `{ "id": 13 }` — the new session's id. Fetch
+`GET /api/sessions/{id}` for the full record.
+
+Errors: `400 { "error": "Missing date or start_time" }` when a required field
+is absent; `500 { "error": "Internal server error" }` on failure.
 
 ### `GET /api/sessions/{id}`
 
@@ -173,4 +201,9 @@ curl https://poker-nine-inky.vercel.app/api/sessions/12/hands
 
 # Resolve "Vishal" to a player_id
 curl https://poker-nine-inky.vercel.app/api/players
+
+# Create a new session for today at 7pm
+curl -X POST https://poker-nine-inky.vercel.app/api/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"date":"2026-09-27","start_time":"2026-09-27T19:00:00","location":"Test game"}'
 ```
