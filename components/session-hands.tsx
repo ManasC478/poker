@@ -24,9 +24,9 @@ import NumberInput from "./number-input";
 import { Switch } from "./ui/switch";
 import { cn } from "@/lib/utils";
 import { Separator } from "./ui/separator";
-import { createHand } from "@/lib/actions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { ScrollArea } from "./ui/scroll-area";
+import { postHand } from "@/lib/actions-http";
 
 type CardSize = "xs" | "sm" | "md";
 
@@ -65,7 +65,7 @@ function HandForm({ session, players, setError }: { session: SessionDetail, play
   async function handleAddHand() {
     setError(null)
     startTransition(async () => {
-      const res = await createHand(session.id, board, handPlayers, notes)
+      const res = await postHand(session.id, board, handPlayers, notes)
       if (res.error) {
         setError(res.error)
         return
