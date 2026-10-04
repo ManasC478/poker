@@ -23,18 +23,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  addBuyIn,
-  addMoment,
-  createMomentType,
-  createPlayer,
-  deleteBuyIn,
-  deleteSession,
-  lockSession,
-  unlockSession,
-  updateBuyIn,
-  updateCashOut,
-} from "@/lib/actions"
 import type { MomentRow, MomentType, Player, SessionDetail } from "@/lib/types"
 import { formatMoney, formatSigned, formatTime } from "@/lib/format"
 import NumberInput from "./number-input"
@@ -44,6 +32,7 @@ import { ScrollArea } from "./ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import { Card, CardContent } from "./ui/card"
 import SessionMetaForm from "./session-meta-form"
+import { deleteBuyIn, deleteSession, patchSessionLock, postBuyIn, postMoment, postMomentType, postPlayer, putBuyIn, putSessionCashOut } from "@/lib/actions-http"
 
 export default function SessionDetail({
   session,
@@ -149,12 +138,13 @@ export default function SessionDetail({
 
     setError(null)
     startTransition(async () => {
-      const res = await addBuyIn(session.id, newPlayerId, amount)
-      if (res.error) setError(res.error)
-      else {
+      try {
+        await postBuyIn(session.id, newPlayerId, amount)
         setNewPlayerId("")
         setNewAmount("")
         router.refresh()
+      } catch (e) {
+        setError(e.message)
       }
     })
   }
@@ -162,19 +152,20 @@ export default function SessionDetail({
   async function handleAddPlayer() {
     if (!newName.trim()) return
     setAddingPlayer(true)
-    const res = await createPlayer(newName, newNick || null)
+
+    try {
+      const res = await postPlayer(newName, newNick || null)
+      if (res.player) {
+        setNewPlayerId(res.player.id)
+      }
+      setNewName("")
+      setNewNick("")
+      setShowAddPlayer(false)
+      router.refresh()
+    } catch (e) {
+      setError(e.message)
+    }
     setAddingPlayer(false)
-    if (res.error) {
-      setError(res.error)
-      return
-    }
-    if (res.player) {
-      setNewPlayerId(res.player.id)
-    }
-    setNewName("")
-    setNewNick("")
-    setShowAddPlayer(false)
-    router.refresh()
   }
 
   function handleUpdateBuyIn(buyInId: number, value: string) {
@@ -183,15 +174,16 @@ export default function SessionDetail({
 
     setError(null)
     startTransition(async () => {
-      const res = await updateBuyIn(buyInId, session.id, amount)
-      if (res.error) setError(res.error)
-      else {
+      try {
+        await putBuyIn(session.id, buyInId, amount)
         setEditingBuyIns((prev) => {
           const next = { ...prev }
           delete next[buyInId]
           return next
         })
         router.refresh()
+      } catch (e) {
+        setError(e.message)
       }
     })
   }
@@ -199,9 +191,12 @@ export default function SessionDetail({
   function handleDeleteBuyIn(buyInId: number) {
     setError(null)
     startTransition(async () => {
-      const res = await deleteBuyIn(buyInId, session.id)
-      if (res.error) setError(res.error)
-      else router.refresh()
+      try {
+        await deleteBuyIn(session.id, buyInId)
+        router.refresh()
+      } catch (e) {
+        setError(e.message)
+      }
     })
   }
 
@@ -210,15 +205,16 @@ export default function SessionDetail({
 
     setError(null)
     startTransition(async () => {
-      const res = await updateCashOut(session.id, playerId, cashOut)
-      if (res.error) setError(res.error)
-      else {
+      try {
+        await putSessionCashOut(session.id, playerId, cashOut)
         setEditingCashOuts((prev) => {
           const next = { ...prev }
           delete next[playerId]
           return next
         })
         router.refresh()
+      } catch (e) {
+        setError(e.message)
       }
     })
   }
@@ -229,10 +225,11 @@ export default function SessionDetail({
 
     setError(null)
     startTransition(async () => {
-      const res = await (session.locked ? unlockSession(session.id) : lockSession(session.id))
-      if (res.error) setError(res.error)
-      else {
+      try {
+        await patchSessionLock(session.id, !session.locked)
         router.refresh()
+      } catch (e) {
+        setError(e.message)
       }
     })
   }
@@ -241,9 +238,12 @@ export default function SessionDetail({
     if (!confirm("Delete this session? This cannot be undone.")) return
     setError(null)
     startTransition(async () => {
-      const res = await deleteSession(session.id)
-      if (res.error) setError(res.error)
-      else router.push("/calendar")
+      try {
+        await deleteSession(session.id)
+        router.push("/calendar")
+      } catch (e) {
+        setError(e.message)
+      }
     })
   }
 
@@ -251,29 +251,33 @@ export default function SessionDetail({
     if (!newTypeName.trim()) return
     setAddingMomentType(true)
     setError(null)
-    const res = await createMomentType(
-      newTypeName.trim(),
-      newTypeEmoji.trim() || null,
-      newTypeDescription.trim() || null
-    )
-    setAddingMomentType(false)
-    if (res.error) {
-      setError(res.error)
-      return
+
+    try {
+      await postMomentType(
+        newTypeName.trim(),
+        newTypeEmoji.trim() || null,
+        newTypeDescription.trim() || null
+      )
+      setNewTypeName("")
+      setNewTypeEmoji("")
+      setNewTypeDescription("")
+      setShowAddMomentType(false)
+      router.refresh()
+    } catch (e) {
+      setError(e.message)
     }
-    setNewTypeName("")
-    setNewTypeEmoji("")
-    setNewTypeDescription("")
-    setShowAddMomentType(false)
-    router.refresh()
+    setAddingMomentType(false)
   }
 
   function handleIncrementMoment(momentTypeId: number) {
     setError(null)
     startTransition(async () => {
-      const res = await addMoment(session.id, momentTypeId, null)
-      if (res.error) setError(res.error)
-      else router.refresh()
+      try {
+        await postMoment(session.id, momentTypeId, null)
+        router.refresh()
+      } catch (e) {
+        setError(e.message)
+      }
     })
   }
 
