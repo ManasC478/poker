@@ -27,7 +27,6 @@ import {
   addBuyIn,
   addMoment,
   createMomentType,
-  createPlayer,
   deleteBuyIn,
   updateBuyIn,
   updateCashOut,
@@ -41,7 +40,7 @@ import { ScrollArea } from "./ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import { Card, CardContent } from "./ui/card"
 import SessionMetaForm from "./session-meta-form"
-import { deleteSession, patchSessionLock } from "@/lib/actions-http"
+import { deleteSession, patchSessionLock, postPlayer } from "@/lib/actions-http"
 
 export default function SessionDetail({
   session,
@@ -160,19 +159,20 @@ export default function SessionDetail({
   async function handleAddPlayer() {
     if (!newName.trim()) return
     setAddingPlayer(true)
-    const res = await createPlayer(newName, newNick || null)
+
+    try {
+      const res = await postPlayer(newName, newNick || null)
+      if (res.player) {
+        setNewPlayerId(res.player.id)
+      }
+      setNewName("")
+      setNewNick("")
+      setShowAddPlayer(false)
+      router.refresh()
+    } catch (e) {
+      setError(e.message)
+    }
     setAddingPlayer(false)
-    if (res.error) {
-      setError(res.error)
-      return
-    }
-    if (res.player) {
-      setNewPlayerId(res.player.id)
-    }
-    setNewName("")
-    setNewNick("")
-    setShowAddPlayer(false)
-    router.refresh()
   }
 
   function handleUpdateBuyIn(buyInId: number, value: string) {

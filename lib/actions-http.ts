@@ -32,7 +32,7 @@ export async function putSessionMeta(id: number, location: string | null, notes:
     },
     body: JSON.stringify({ location, notes, start_time })
   })
-  
+
   if (!res.ok) {
     const data = await res.json()
     throw new Error(data.error)
@@ -47,7 +47,7 @@ export async function putSessionTag(id: number, tags: string[]) {
     },
     body: JSON.stringify({ tags })
   })
-  
+
   if (!res.ok) {
     const data = await res.json()
     throw new Error(data.error)
@@ -62,7 +62,7 @@ export async function deleteSessionTag(id: number, tags: string[]) {
     },
     body: JSON.stringify({ tags })
   })
-  
+
   if (!res.ok) {
     const data = await res.json()
     throw new Error(data.error)
@@ -77,7 +77,7 @@ export async function patchSessionLock(id: number, lock: boolean) {
     },
     body: JSON.stringify({ locked: lock })
   })
-  
+
   if (!res.ok) {
     const data = await res.json()
     throw new Error(data.error)
@@ -91,9 +91,25 @@ export async function deleteSession(id: number) {
       'Content-Type': 'application/json'
     },
   })
-  
+
   if (!res.ok) {
     const data = await res.json()
     throw new Error(data.error)
   }
+}
+
+export async function postPlayer(name: string, nickname: string | null) {
+  const res = await fetch(`/api/players`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ name, nickname })
+  })
+
+  const data = await res.json()
+  if (!res.ok) {
+    throw new Error(data.error)
+  }
+  return data
 }

@@ -90,23 +90,6 @@ export async function updateCashOut(sessionId: number, playerId: number, cashOut
   return { ok: true }
 }
 
-export async function createPlayer(name: string, nickname: string | null) {
-  const supabase = await createClient()
-  const trimmed = name.trim()
-  if (!trimmed) return { error: "Name is required" }
-
-  const { data, error } = await supabase
-    .from("players")
-    .insert({ name: trimmed, nickname: nickname?.trim() || null })
-    .select("id, name, nickname")
-    .single()
-
-  if (error) return { error: error.message }
-  revalidatePath("/")
-  revalidatePath("/calendar")
-  return { player: data }
-}
-
 export async function saveSession(input: {
   id?: number
   date: string
