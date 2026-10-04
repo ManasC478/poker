@@ -27,7 +27,8 @@ callers (curl, AI agents) are unaffected by CORS either way.
 
 - IDs (`id`, `player_id`, `session_id`, `hand_id`) are numbers.
 - Dates are `YYYY-MM-DD` strings (e.g. `"2026-09-27"`).
-- Timestamps (`created_at`, `start_time`) are ISO strings.
+- Timestamps (`created_at`) are ISO strings. `start_time` is a Postgres `time`
+  column: `HH:MM:SS` 24-hour time (e.g. `"19:00:00"`).
 - Money (`buy_in`, `cash_out`, `net`, `amount`, `amount_won`) is a plain number
   in dollars.
 - A card is `{ "rank": "A", "suit": "spades" }`. Rank is one of
@@ -144,7 +145,6 @@ Errors: `404 { "error": "Session not found" }` for an unknown id;
 Hand history for one session, oldest first. Each hand carries the board
 (`hand_cards`, grouped by `round`: `flop` / `turn` / `river`) and each involved
 player's hole cards plus winner info.
-
 Response: array of
 ```json
 {
@@ -168,6 +168,41 @@ Response: array of
 ```
 Errors: `500 { "error": "Internal server error" }` on failure. (Unknown session
 id returns an empty array, not a 404.)
+
+### `POST /api/sessions/{id}/hands`
+
+Record a hand for a session. `player_id`s must be real players (see
+`GET /api/players`); cards use the `{ rank, suit }` convention above.
+
+Request body (JSON):
+```json
+{
+  "board": {
+    "flop1": { "rank": "A", "suit": "diamonds" },
+    "flop2": { "rank": "7", "suit": "clubs" },
+    "flop3": { "rank": "2", "suit": "spades" },
+    "turn": { "rank": "9", "suit": "diamonds" },
+    "river": null
+  },
+  "players": [
+    {
+      "player_id": 1,
+      "card1": { "rank": "A", "suit": "spades" },
+      "card2": { "rank": "A", "suit": "hearts" },
+      "is_winner": true,
+      "amount_won": 150
+    }
+  ],
+  "notes": "Manas flops a set, holds"
+}
+```
+- `board`: all five keys required; use `null` for streets that weren't dealt.
+- `players`: at least one; `amount_won` is in dollars.
+- `notes`: string (pass `""` when empty).
+
+Response `200`: `{ "ok": true }`.
+
+Errors: `500 { "error": "Internal server error" }` on failure.
 
 ### `GET /api/leaderboard`
 
