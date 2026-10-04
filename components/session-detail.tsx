@@ -24,9 +24,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
-  addBuyIn,
-  deleteBuyIn,
-  updateBuyIn,
   updateCashOut,
 } from "@/lib/actions"
 import type { MomentRow, MomentType, Player, SessionDetail } from "@/lib/types"
@@ -38,7 +35,7 @@ import { ScrollArea } from "./ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import { Card, CardContent } from "./ui/card"
 import SessionMetaForm from "./session-meta-form"
-import { deleteSession, patchSessionLock, postMoment, postMomentType, postPlayer } from "@/lib/actions-http"
+import { deleteBuyIn, deleteSession, patchSessionLock, postBuyIn, postMoment, postMomentType, postPlayer, putBuyIn } from "@/lib/actions-http"
 
 export default function SessionDetail({
   session,
@@ -144,12 +141,13 @@ export default function SessionDetail({
 
     setError(null)
     startTransition(async () => {
-      const res = await addBuyIn(session.id, newPlayerId, amount)
-      if (res.error) setError(res.error)
-      else {
+      try {
+        await postBuyIn(session.id, newPlayerId, amount)
         setNewPlayerId("")
         setNewAmount("")
         router.refresh()
+      } catch (e) {
+        setError(e.message)
       }
     })
   }
@@ -179,15 +177,16 @@ export default function SessionDetail({
 
     setError(null)
     startTransition(async () => {
-      const res = await updateBuyIn(buyInId, session.id, amount)
-      if (res.error) setError(res.error)
-      else {
+      try {
+        await putBuyIn(session.id, buyInId, amount)
         setEditingBuyIns((prev) => {
           const next = { ...prev }
           delete next[buyInId]
           return next
         })
         router.refresh()
+      } catch (e) {
+        setError(e.message)
       }
     })
   }
@@ -195,9 +194,12 @@ export default function SessionDetail({
   function handleDeleteBuyIn(buyInId: number) {
     setError(null)
     startTransition(async () => {
-      const res = await deleteBuyIn(buyInId, session.id)
-      if (res.error) setError(res.error)
-      else router.refresh()
+      try {
+        await deleteBuyIn(session.id, buyInId)
+        router.refresh()
+      } catch (e) {
+        setError(e.message)
+      }
     })
   }
 

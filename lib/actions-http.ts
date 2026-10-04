@@ -158,3 +158,47 @@ export async function deleteMoment(sessionId: number, momentId: number) {
     throw new Error(data.error)
   }
 }
+
+export async function postBuyIn(sessionId: number, playerId: number, amount: number) {
+  const res = await fetch(`/api/sessions/${sessionId}/buy-in/player/${playerId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ amount })
+  })
+
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error)
+  }
+}
+
+export async function putBuyIn(sessionId: number, playerId: number, amount: number) {
+  const res = await fetch(`/api/sessions/${sessionId}/buy-in/${playerId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ amount })
+  })
+
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error)
+  }
+}
+
+export async function deleteBuyIn(sessionId: number, buyInId: number) {
+  const res = await fetch(`/api/sessions/${sessionId}/buy-in/${buyInId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+  })
+
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error)
+  }
+}   
