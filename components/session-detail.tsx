@@ -26,7 +26,6 @@ import {
 import {
   addBuyIn,
   addMoment,
-  createMomentType,
   deleteBuyIn,
   updateBuyIn,
   updateCashOut,
@@ -40,7 +39,7 @@ import { ScrollArea } from "./ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import { Card, CardContent } from "./ui/card"
 import SessionMetaForm from "./session-meta-form"
-import { deleteSession, patchSessionLock, postPlayer } from "@/lib/actions-http"
+import { deleteSession, patchSessionLock, postMomentType, postPlayer } from "@/lib/actions-http"
 
 export default function SessionDetail({
   session,
@@ -253,21 +252,22 @@ export default function SessionDetail({
     if (!newTypeName.trim()) return
     setAddingMomentType(true)
     setError(null)
-    const res = await createMomentType(
-      newTypeName.trim(),
-      newTypeEmoji.trim() || null,
-      newTypeDescription.trim() || null
-    )
-    setAddingMomentType(false)
-    if (res.error) {
-      setError(res.error)
-      return
+
+    try {
+      await postMomentType(
+        newTypeName.trim(),
+        newTypeEmoji.trim() || null,
+        newTypeDescription.trim() || null
+      )
+      setNewTypeName("")
+      setNewTypeEmoji("")
+      setNewTypeDescription("")
+      setShowAddMomentType(false)
+      router.refresh()
+    } catch (e) {
+      setError(e.message)
     }
-    setNewTypeName("")
-    setNewTypeEmoji("")
-    setNewTypeDescription("")
-    setShowAddMomentType(false)
-    router.refresh()
+    setAddingMomentType(false)
   }
 
   function handleIncrementMoment(momentTypeId: number) {

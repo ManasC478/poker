@@ -142,29 +142,6 @@ export async function saveSession(input: {
   return { id: sessionId }
 }
 
-export async function createMomentType(
-  name: string,
-  emoji: string | null,
-  description: string | null
-) {
-  const supabase = await createClient()
-  const trimmed = name.trim()
-  if (!trimmed) return { error: "Name is required" }
-
-  const { data, error } = await supabase
-    .from("moment_types")
-    .insert({
-      name: trimmed,
-      emoji: emoji?.trim() || null,
-      description: description?.trim() || null,
-    })
-    .select("id, name, emoji, description, created_at")
-    .single()
-
-  if (error) return { error: error.message }
-  return { momentType: data }
-}
-
 export async function addMoment(sessionId: number, momentTypeId: number, note: string | null) {
   const supabase = await createClient()
   if (!momentTypeId) return { error: "Moment type is required" }

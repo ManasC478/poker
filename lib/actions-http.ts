@@ -113,3 +113,19 @@ export async function postPlayer(name: string, nickname: string | null) {
   }
   return data
 }
+
+export async function postMomentType(name: string, emoji: string | null, description: string | null) {
+  const res = await fetch(`/api/moments-types`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ name, emoji, description })
+  })
+
+  const data = await res.json()
+  if (!res.ok) {
+    throw new Error(data.error)
+  }
+  return data
+}
