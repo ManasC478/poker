@@ -91,13 +91,14 @@ Request body (JSON):
 ```json
 {
   "date": "2026-09-27",
-  "start_time": "2026-09-27T19:00:00",
+  "start_time": "19:00:00",
   "location": "Manas's place",
   "notes": null
 }
 ```
 - `date` (required): `YYYY-MM-DD`.
-- `start_time` (required): ISO datetime string.
+- `start_time` (required): `HH:MM:SS` 24-hour time (Postgres `time` column,
+  e.g. `"19:00:00"`).
 - `location`, `notes` (optional): default to `null` when omitted.
 
 Response `201`: `{ "id": 13 }` — the new session's id. Fetch
@@ -205,5 +206,5 @@ curl https://poker-nine-inky.vercel.app/api/players
 # Create a new session for today at 7pm
 curl -X POST https://poker-nine-inky.vercel.app/api/sessions \
   -H "Content-Type: application/json" \
-  -d '{"date":"2026-09-27","start_time":"2026-09-27T19:00:00","location":"Test game"}'
+  -d '{"date":"2026-09-27","start_time":"19:00:00","location":"Test game"}'
 ```
