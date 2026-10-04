@@ -29,7 +29,6 @@ import {
   createMomentType,
   createPlayer,
   deleteBuyIn,
-  deleteSession,
   updateBuyIn,
   updateCashOut,
 } from "@/lib/actions"
@@ -42,7 +41,7 @@ import { ScrollArea } from "./ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import { Card, CardContent } from "./ui/card"
 import SessionMetaForm from "./session-meta-form"
-import { patchSessionLock } from "@/lib/actions-http"
+import { deleteSession, patchSessionLock } from "@/lib/actions-http"
 
 export default function SessionDetail({
   session,
@@ -241,9 +240,12 @@ export default function SessionDetail({
     if (!confirm("Delete this session? This cannot be undone.")) return
     setError(null)
     startTransition(async () => {
-      const res = await deleteSession(session.id)
-      if (res.error) setError(res.error)
-      else router.push("/calendar")
+      try {
+        await deleteSession(session.id)
+        router.push("/calendar")
+      } catch (e) {
+        setError(e.message)
+      }
     })
   }
 

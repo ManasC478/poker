@@ -159,15 +159,6 @@ export async function saveSession(input: {
   return { id: sessionId }
 }
 
-export async function deleteSession(id: number) {
-  const supabase = await createClient()
-  const { error } = await supabase.from("sessions").delete().eq("id", id)
-  if (error) return { error: error.message }
-  revalidatePath("/")
-  revalidatePath("/calendar")
-  return { ok: true }
-}
-
 export async function createMomentType(
   name: string,
   emoji: string | null,

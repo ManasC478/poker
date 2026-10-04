@@ -83,3 +83,17 @@ export async function patchSessionLock(id: number, lock: boolean) {
     throw new Error(data.error)
   }
 }
+
+export async function deleteSession(id: number) {
+  const res = await fetch(`/api/sessions/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+  })
+  
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error)
+  }
+}
