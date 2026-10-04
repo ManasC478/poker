@@ -38,3 +38,33 @@ export async function putSessionMeta(id: number, location: string | null, notes:
     throw new Error(data.error)
   }
 }
+
+export async function putSessionTag(id: number, tags: string[]) {
+  const res = await fetch(`/api/sessions/${id}/tags`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ tags })
+  })
+  
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error)
+  }
+}
+
+export async function deleteSessionTag(id: number, tags: string[]) {
+  const res = await fetch(`/api/sessions/${id}/tags`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ tags })
+  })
+  
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error)
+  }
+}

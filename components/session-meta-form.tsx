@@ -1,11 +1,10 @@
-import { addTag, removeTag } from "@/lib/actions"
 import { SessionDetail } from "@/lib/types"
 import { Clock, Loader2, MapPin, Plus, Tag, X } from "lucide-react"
 import { useState } from "react"
 import { Button } from "./ui/button"
 import { useRouter } from "next/navigation"
 import { Badge } from "./ui/badge"
-import { putSessionMeta } from "@/lib/actions-http"
+import { deleteSessionTag, putSessionMeta, putSessionTag } from "@/lib/actions-http"
 
 export type SessionMetaFormProps = {
   session: SessionDetail
@@ -39,14 +38,10 @@ export default function SessionMetaForm({ session, setError, pending, startTrans
           notes.trim() || null,
           startTime.trim()
         )
-        const addRes = await addTag(Array.from(tagsToAdd), session.id)
-        const removeRes = await removeTag(Array.from(tagsToRemove), session.id)
-        if (addRes.error) setError(addRes.error)
-        else if (removeRes.error) setError(removeRes.error)
-        else {
-          setMetaDirty(false)
-          router.refresh()
-        }
+        await putSessionTag(session.id, Array.from(tagsToAdd))
+        await deleteSessionTag(session.id, Array.from(tagsToRemove))
+        setMetaDirty(false)
+        router.refresh()
       } catch (e) {
         setError(e.message)
       }
