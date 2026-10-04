@@ -68,3 +68,18 @@ export async function deleteSessionTag(id: number, tags: string[]) {
     throw new Error(data.error)
   }
 }
+
+export async function patchSessionLock(id: number, lock: boolean) {
+  const res = await fetch(`/api/sessions/${id}/lock`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ locked: lock })
+  })
+  
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error)
+  }
+}

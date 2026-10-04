@@ -30,8 +30,6 @@ import {
   createPlayer,
   deleteBuyIn,
   deleteSession,
-  lockSession,
-  unlockSession,
   updateBuyIn,
   updateCashOut,
 } from "@/lib/actions"
@@ -44,6 +42,7 @@ import { ScrollArea } from "./ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import { Card, CardContent } from "./ui/card"
 import SessionMetaForm from "./session-meta-form"
+import { patchSessionLock } from "@/lib/actions-http"
 
 export default function SessionDetail({
   session,
@@ -229,10 +228,11 @@ export default function SessionDetail({
 
     setError(null)
     startTransition(async () => {
-      const res = await (session.locked ? unlockSession(session.id) : lockSession(session.id))
-      if (res.error) setError(res.error)
-      else {
+      try {
+        await patchSessionLock(session.id, !session.locked)
         router.refresh()
+      } catch (e) {
+        setError(e.message)
       }
     })
   }
