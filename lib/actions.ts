@@ -10,27 +10,6 @@ function revalidateSession(sessionId: number) {
   revalidatePath(`/sessions/${sessionId}`)
 }
 
-export async function createSession(input: {
-  date: string
-  location: string | null
-  notes: string | null
-  start_time: string
-}) {
-  const supabase = await createClient()
-  if (!input.date) return { error: "Date is required" }
-
-  const { data, error } = await supabase
-    .from("sessions")
-    .insert({ date: input.date, location: input.location, notes: input.notes, start_time: input.start_time })
-    .select("id")
-    .single()
-
-  if (error) return { error: error.message }
-  revalidatePath("/")
-  revalidatePath("/calendar")
-  return { id: data.id }
-}
-
 export async function updateSessionMeta(input: {
   id: number
   location: string | null

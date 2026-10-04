@@ -1,4 +1,4 @@
-import { createSession } from "@/lib/actions";
+import { createSession } from "@/lib/handlers";
 import { getSessions } from "@/lib/data";
 import { NextRequest, NextResponse } from "next/server";
 
