@@ -1,10 +1,11 @@
-import { addTag, removeTag, updateSessionMeta } from "@/lib/actions"
+import { addTag, removeTag } from "@/lib/actions"
 import { SessionDetail } from "@/lib/types"
 import { Clock, Loader2, MapPin, Plus, Tag, X } from "lucide-react"
 import { useState } from "react"
 import { Button } from "./ui/button"
 import { useRouter } from "next/navigation"
 import { Badge } from "./ui/badge"
+import { putSessionMeta } from "@/lib/actions-http"
 
 export type SessionMetaFormProps = {
   session: SessionDetail
@@ -31,20 +32,23 @@ export default function SessionMetaForm({ session, setError, pending, startTrans
     const tagsToRemove = currentTags.difference(newTags)
 
     startTransition(async () => {
-      const res = await updateSessionMeta({
-        id: session.id,
-        location: location.trim() || null,
-        notes: notes.trim() || null,
-        start_time: startTime.trim()
-      })
-      const addRes = await addTag(Array.from(tagsToAdd), session.id)
-      const removeRes = await removeTag(Array.from(tagsToRemove), session.id)
-      if (res.error) setError(res.error)
-      else if (addRes.error) setError(addRes.error)
-      else if (removeRes.error) setError(removeRes.error)
-      else {
-        setMetaDirty(false)
-        router.refresh()
+      try {
+        await putSessionMeta(
+          session.id,
+          location.trim() || null,
+          notes.trim() || null,
+          startTime.trim()
+        )
+        const addRes = await addTag(Array.from(tagsToAdd), session.id)
+        const removeRes = await removeTag(Array.from(tagsToRemove), session.id)
+        if (addRes.error) setError(addRes.error)
+        else if (removeRes.error) setError(removeRes.error)
+        else {
+          setMetaDirty(false)
+          router.refresh()
+        }
+      } catch (e) {
+        setError(e.message)
       }
     })
   }

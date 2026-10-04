@@ -10,29 +10,6 @@ function revalidateSession(sessionId: number) {
   revalidatePath(`/sessions/${sessionId}`)
 }
 
-export async function updateSessionMeta(input: {
-  id: number
-  location: string | null
-  notes: string | null
-  start_time: string
-}) {
-  const supabase = await createClient()
-  const payload: Record<string, any> = {
-    location: input.location,
-    notes: input.notes,
-    start_time: input.start_time
-  }
-
-  const { error } = await supabase
-    .from("sessions")
-    .update(payload)
-    .eq("id", input.id)
-
-  if (error) return { error: error.message }
-  revalidateSession(input.id)
-  return { ok: true }
-}
-
 export async function addBuyIn(sessionId: number, playerId: number, amount: number) {
   const supabase = await createClient()
   if (amount <= 0) return { error: "Amount must be greater than 0" }
