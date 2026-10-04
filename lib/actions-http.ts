@@ -202,3 +202,18 @@ export async function deleteBuyIn(sessionId: number, buyInId: number) {
     throw new Error(data.error)
   }
 }   
+
+export async function putSessionCashOut(id: number, playerId: number, cashOut: number) {
+  const res = await fetch(`/api/sessions/${id}/cashout/${playerId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ amount: cashOut })
+  })
+
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error)
+  }
+}

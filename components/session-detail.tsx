@@ -23,9 +23,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  updateCashOut,
-} from "@/lib/actions"
 import type { MomentRow, MomentType, Player, SessionDetail } from "@/lib/types"
 import { formatMoney, formatSigned, formatTime } from "@/lib/format"
 import NumberInput from "./number-input"
@@ -35,7 +32,7 @@ import { ScrollArea } from "./ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import { Card, CardContent } from "./ui/card"
 import SessionMetaForm from "./session-meta-form"
-import { deleteBuyIn, deleteSession, patchSessionLock, postBuyIn, postMoment, postMomentType, postPlayer, putBuyIn } from "@/lib/actions-http"
+import { deleteBuyIn, deleteSession, patchSessionLock, postBuyIn, postMoment, postMomentType, postPlayer, putBuyIn, putSessionCashOut } from "@/lib/actions-http"
 
 export default function SessionDetail({
   session,
@@ -208,15 +205,16 @@ export default function SessionDetail({
 
     setError(null)
     startTransition(async () => {
-      const res = await updateCashOut(session.id, playerId, cashOut)
-      if (res.error) setError(res.error)
-      else {
+      try {
+        await putSessionCashOut(session.id, playerId, cashOut)
         setEditingCashOuts((prev) => {
           const next = { ...prev }
           delete next[playerId]
           return next
         })
         router.refresh()
+      } catch (e) {
+        setError(e.message)
       }
     })
   }
