@@ -129,3 +129,32 @@ export async function postMomentType(name: string, emoji: string | null, descrip
   }
   return data
 }
+
+export async function postMoment(sessionId: number, momentTypeId: number, note: string | null) {
+  const res = await fetch(`/api/sessions/${sessionId}/moments/${momentTypeId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ moment_type_id: momentTypeId, note })
+  })
+
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error)
+  }
+}
+
+export async function deleteMoment(sessionId: number, momentId: number) {
+  const res = await fetch(`/api/sessions/${sessionId}/moments/${momentId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+  })
+
+  if (!res.ok) {
+    const data = await res.json()
+    throw new Error(data.error)
+  }
+}

@@ -141,28 +141,3 @@ export async function saveSession(input: {
   revalidatePath("/calendar")
   return { id: sessionId }
 }
-
-export async function addMoment(sessionId: number, momentTypeId: number, note: string | null) {
-  const supabase = await createClient()
-  if (!momentTypeId) return { error: "Moment type is required" }
-
-  const { error } = await supabase
-    .from("moments")
-    .insert({
-      session_id: sessionId,
-      moment_type_id: momentTypeId,
-      note: note?.trim() || null,
-    })
-
-  if (error) return { error: error.message }
-  revalidateSession(sessionId)
-  return { ok: true }
-}
-
-export async function deleteMoment(momentId: number, sessionId: number) {
-  const supabase = await createClient()
-  const { error } = await supabase.from("moments").delete().eq("id", momentId)
-  if (error) return { error: error.message }
-  revalidateSession(sessionId)
-  return { ok: true }
-}

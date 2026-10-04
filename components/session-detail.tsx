@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/table"
 import {
   addBuyIn,
-  addMoment,
   deleteBuyIn,
   updateBuyIn,
   updateCashOut,
@@ -39,7 +38,7 @@ import { ScrollArea } from "./ui/scroll-area"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 import { Card, CardContent } from "./ui/card"
 import SessionMetaForm from "./session-meta-form"
-import { deleteSession, patchSessionLock, postMomentType, postPlayer } from "@/lib/actions-http"
+import { deleteSession, patchSessionLock, postMoment, postMomentType, postPlayer } from "@/lib/actions-http"
 
 export default function SessionDetail({
   session,
@@ -273,9 +272,12 @@ export default function SessionDetail({
   function handleIncrementMoment(momentTypeId: number) {
     setError(null)
     startTransition(async () => {
-      const res = await addMoment(session.id, momentTypeId, null)
-      if (res.error) setError(res.error)
-      else router.refresh()
+      try {
+        await postMoment(session.id, momentTypeId, null)
+        router.refresh()
+      } catch (e) {
+        setError(e.message)
+      }
     })
   }
 
