@@ -4,8 +4,8 @@ import { useEffect, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { createSession } from "@/lib/actions"
 import { formatLongDate } from "@/lib/format"
+import { postSession } from "@/lib/actions-http"
 
 export function SessionDialog({
   open,
@@ -35,12 +35,12 @@ export function SessionDialog({
   function handleCreate() {
     setError(null)
     startTransition(async () => {
-      const res = await createSession({
-        date: dateKey,
-        location: location.trim() || null,
-        notes: notes.trim() || null,
-        start_time: startTime.trim()
-      })
+      const res = await postSession(
+        dateKey,
+        startTime.trim(),
+        location.trim() || null,
+        notes.trim() || null
+      )
       if (res.error) setError(res.error)
       else if (res.id) {
         onClose()
