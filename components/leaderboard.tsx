@@ -229,6 +229,7 @@ export function Leaderboard({
   useSlamRows(tbodyRef, tableWrapRef, rows.map((r) => r.player_id).join(","), vegasMode, affected)
 
   const leader = rows[0]
+  const loser = rows[rows.length-1]
 
   const handleToggle = () => {
     if (!vegasMode) {
@@ -270,7 +271,7 @@ export function Leaderboard({
         </div>
       </div>
 
-      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Sessions played" value={String(sessionCount)} />
         <StatCard label="Biggest pot" value={formatMoney(biggestPot)} accent="gold" />
         <StatCard
@@ -278,6 +279,14 @@ export function Leaderboard({
           value={leader ? leader.name : "—"}
           sub={leader ? formatSigned(netFor(leader)) : undefined}
           subColor={leader ? (netFor(leader) >= 0 ? "win" : "loss") : undefined}
+          accent="primary"
+          className="col-span-2 sm:col-span-1"
+        />
+        <StatCard
+          label="Bottom of the ladder"
+          value={loser ? loser.name : "—"}
+          sub={loser ? formatSigned(netFor(loser)) : undefined}
+          subColor={loser ? (netFor(loser) >= 0 ? "win" : "loss") : undefined}
           accent="primary"
           className="col-span-2 sm:col-span-1"
         />
