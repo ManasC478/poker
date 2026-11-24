@@ -322,12 +322,12 @@ export function Leaderboard({
                     <RankBadge rank={i + 1} />
                   </TableCell>
                   <TableCell className="flex items-center gap-1">
-                    <span className="font-medium text-foreground">
+                    <Link href={`/players/${entry.player_id}`} className="font-medium text-foreground hover:text-blue-600">
                       {entry.name}
                       {entry.nickname ? (
                         <span className="font-normal text-muted-foreground"> “{entry.nickname}”</span>
                       ) : null}
-                    </span>
+                    </Link>
                     <Link href={`/sessions?playerId=${entry.player_id}`}>
                       <SquareArrowOutUpRight className="size-3" />
                     </Link>
