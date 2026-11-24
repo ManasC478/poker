@@ -16,19 +16,32 @@ import {
 } from "@/components/ui/table"
 
 /**
- * Photo carousel placeholders.
+ * Carousel photos, keyed by first name (lowercase).
  *
- * TODO(photos): replace these with the real photos once they're sent —
- * save 4 per player as `public/players/<first-name-lowercase>-1.jpg`
- * through `-4.jpg` and point this list at them. Until then every slot
- * shows the placeholder so the carousel layout can be reviewed.
+ * Real photos live in `public/players/<name>-<n>.jpg`. Players without
+ * photos yet fall back to the placeholder. To add photos for a player,
+ * save them as `<name>-1.jpg` … `<name>-4.jpg` and add an entry here.
  */
+const PLAYER_PHOTOS: Record<string, string[]> = {
+  sawyer: ["/players/sawyer-1.jpg", "/players/sawyer-2.jpg", "/players/sawyer-3.jpg", "/players/sawyer-4.jpg"],
+  atharva: ["/players/atharva-1.jpg", "/players/atharva-2.jpg", "/players/atharva-3.jpg", "/players/atharva-4.jpg"],
+  mihir: ["/players/mihir-1.jpg", "/players/mihir-2.jpg", "/players/mihir-3.jpg", "/players/mihir-4.jpg"],
+  ishaan: ["/players/ishaan-1.jpg", "/players/ishaan-2.jpg", "/players/ishaan-3.jpg", "/players/ishaan-4.jpg"],
+  justin: ["/players/justin-1.jpg", "/players/justin-2.jpg", "/players/justin-3.jpg", "/players/justin-4.jpg"],
+  rajiv: ["/players/rajiv-1.jpg", "/players/rajiv-2.jpg", "/players/rajiv-3.jpg", "/players/rajiv-4.jpg"],
+  manas: ["/players/manas-1.jpg", "/players/manas-2.jpg", "/players/manas-3.jpg", "/players/manas-4.jpg"],
+}
+
 const PHOTO_PLACEHOLDERS = [
   "/placeholder-user.jpg",
   "/placeholder-user.jpg",
   "/placeholder-user.jpg",
   "/placeholder-user.jpg",
 ]
+
+function photosForPlayer(name: string): string[] {
+  return PLAYER_PHOTOS[name.trim().toLowerCase()] ?? PHOTO_PLACEHOLDERS
+}
 
 function shortDate(key: string): string {
   return parseDateKey(key).toLocaleDateString("en-US", {
@@ -72,7 +85,7 @@ export function PlayerProfileView({ profile }: { profile: PlayerProfile }) {
       </div>
 
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr]">
-        <PhotoCarousel playerName={player.name} />
+        <PhotoCarousel playerName={player.name} photos={photosForPlayer(player.name)} />
         <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
           <h2 className="text-lg font-semibold text-card-foreground">About {displayName}</h2>
           {bio ? (
@@ -92,19 +105,19 @@ export function PlayerProfileView({ profile }: { profile: PlayerProfile }) {
   )
 }
 
-function PhotoCarousel({ playerName }: { playerName: string }) {
+function PhotoCarousel({ playerName, photos }: { playerName: string; photos: string[] }) {
   const [index, setIndex] = useState(0)
-  const total = PHOTO_PLACEHOLDERS.length
+  const total = photos.length
   const prev = () => setIndex((i) => (i - 1 + total) % total)
   const next = () => setIndex((i) => (i + 1) % total)
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card">
-      <div className="relative aspect-[4/3] bg-muted">
+      <div className="relative aspect-[4/5] bg-muted">
         <img
-          src={PHOTO_PLACEHOLDERS[index]}
+          src={photos[index]}
           alt={`${playerName} — photo ${index + 1} of ${total}`}
-          className="size-full object-cover"
+          className="size-full object-contain"
         />
         <button
           onClick={prev}
@@ -125,7 +138,7 @@ function PhotoCarousel({ playerName }: { playerName: string }) {
         </span>
       </div>
       <div className="flex items-center justify-center gap-1.5 p-3">
-        {PHOTO_PLACEHOLDERS.map((_, i) => (
+        {photos.map((_, i) => (
           <button
             key={i}
             onClick={() => setIndex(i)}
