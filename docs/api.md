@@ -46,10 +46,37 @@ All players, ordered by name.
 
 Response: array of
 ```json
-{ "id": 1, "name": "Manas", "nickname": null }
+{ "id": 1, "name": "Manas", "nickname": null, "description": "..." }
 ```
-`nickname` may be `null`. Use this to resolve a person's name to their
+`nickname` and `description` may be `null`. `description` is the player's bio
+from the `players.description` column. Use this to resolve a person's name to their
 `player_id` before calling endpoints that need an id.
+
+### `GET /api/players/{id}`
+
+One player, same shape as above. Errors: `400 { "error": "Invalid player id" }`;
+`404 { "error": "Player not found" }`.
+
+### `GET /api/players/{id}/profile`
+
+Profile data for one player: their bio plus Squad-only lifetime totals and a
+per-session running net, oldest session first. Only sessions tagged `Squad`
+count — the same rule as the leaderboard, so the graph and the leaderboard row
+always agree.
+
+Response:
+```json
+{
+  "player": { "id": 1, "name": "Manas", "nickname": null, "description": "..." },
+  "net": 230, "sessions": 18, "total_buy_in": 1800, "total_cash_out": 2030,
+  "profitHistory": [
+    { "session_id": 12, "date": "2026-09-27", "net": 150, "buy_in": 200, "cash_out": 350, "cumulative": 150 }
+  ]
+}
+```
+`cumulative` is the running net across Squad sessions up to and including that
+session. Errors: `400 { "error": "Invalid player id" }`;
+`404 { "error": "Player not found" }`.
 
 ### `GET /api/moments-types`
 
