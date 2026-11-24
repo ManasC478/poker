@@ -1,15 +1,87 @@
 import { createClient } from "@/lib/supabase/server"
-import type { Player, Session, SessionDetail, LeaderboardEntry, MomentType, MomentRow, FilterCondition, Hand } from "@/lib/types"
+import type { Player, PlayerProfile, ProfitPoint, Session, SessionDetail, LeaderboardEntry, MomentType, MomentRow, FilterCondition, Hand } from "@/lib/types"
 import { hasTagQueryFn } from "./db/filter/query"
 
+/**
+ * Players, including the `description` bio column when it exists.
+ * If the column hasn't been added to the `players` table yet, Supabase
+ * errors on the select — fall back to the columns that do exist instead
+ * of failing the whole page.
+ */
 export async function getPlayers(): Promise<Player[]> {
   const supabase = await createClient()
-  const { data, error } = await supabase.from("players").select("id, name, nickname").order("name")
-  if (error) {
-    console.log("getPlayers error:", error.message)
+  const { data, error } = await supabase.from("players").select("id, name, nickname, description").order("name")
+  if (!error) return (data ?? []).map((p) => ({ ...p, description: p.description ?? null }))
+
+  console.log("getPlayers with description error, retrying without it:", error.message)
+  const retry = await supabase.from("players").select("id, name, nickname").order("name")
+  if (retry.error) {
+    console.log("getPlayers error:", retry.error.message)
     return []
   }
-  return data ?? []
+  return (retry.data ?? []).map((p) => ({ ...p, description: null }))
+}
+
+/** One player by id, with the `description` bio when the column exists. */
+export async function getPlayer(id: number): Promise<Player | null> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("players")
+    .select("id, name, nickname, description")
+    .eq("id", id)
+    .maybeSingle()
+  if (!error) return data ? { ...data, description: data.description ?? null } : null
+
+  console.log("getPlayer with description error, retrying without it:", error.message)
+  const retry = await supabase.from("players").select("id, name, nickname").eq("id", id).maybeSingle()
+  if (retry.error || !retry.data) return null
+  return { ...retry.data, description: null }
+}
+
+/**
+ * Profile data for one player: their bio plus Squad-only lifetime totals
+ * and a per-session running net, oldest session first. Squad-only, same
+ * rule as the leaderboard (`getLeaderboard`): only sessions tagged `Squad`
+ * count, so the graph and the leaderboard row always agree.
+ */
+export async function getPlayerProfile(id: number): Promise<PlayerProfile | null> {
+  const player = await getPlayer(id)
+  if (!player) return null
+
+  const tagCondition: FilterCondition<string[], Set<number>> = {
+    field: 'tags',
+    type: 'query',
+    value: ['Squad'],
+    query: hasTagQueryFn
+  }
+  const sessions = await getSessions([tagCondition])
+
+  const played = sessions
+    .filter((s) => s.participants.some((p) => p.player_id === id))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id)
+
+  let running = 0
+  const profitHistory: ProfitPoint[] = played.map((s) => {
+    const p = s.participants.find((x) => x.player_id === id)!
+    running += p.net
+    return {
+      session_id: s.id,
+      date: s.date,
+      net: p.net,
+      buy_in: p.buy_in,
+      cash_out: p.cash_out,
+      cumulative: running,
+    }
+  })
+
+  return {
+    player,
+    net: running,
+    sessions: profitHistory.length,
+    total_buy_in: profitHistory.reduce((sum, p) => sum + p.buy_in, 0),
+    total_cash_out: profitHistory.reduce((sum, p) => sum + p.cash_out, 0),
+    profitHistory,
+  }
 }
 
 export async function getMomentTypes(): Promise<MomentType[]> {

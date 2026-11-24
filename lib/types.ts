@@ -4,6 +4,8 @@ export type Player = {
   id: number
   name: string
   nickname: string | null
+  /** Bio from the `players.description` column; null when not filled in. */
+  description: string | null
 }
 
 export type Participant = {
@@ -86,6 +88,29 @@ export type LeaderboardEntry = {
   sessions: number
   total_buy_in: number
   total_cash_out: number
+}
+
+/** One Squad session's result for a player, with running total after it. */
+export type ProfitPoint = {
+  session_id: number
+  date: string // YYYY-MM-DD
+  net: number
+  buy_in: number
+  cash_out: number
+  /** Cumulative net across Squad sessions up to and including this one. */
+  cumulative: number
+}
+
+/** Everything the player profile page needs for one player. */
+export type PlayerProfile = {
+  player: Player
+  /** Squad-only lifetime totals (same numbers as the leaderboard row). */
+  net: number
+  sessions: number
+  total_buy_in: number
+  total_cash_out: number
+  /** Squad sessions the player played in, oldest first, with running net. */
+  profitHistory: ProfitPoint[]
 }
 
 export type BuilderFn<T> = (query: PostgrestFilterBuilder<any,any,any,any,any,any,any,any>, value: T) => PostgrestFilterBuilder<any,any,any,any,any,any,any,any>;
