@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react"
 import Link from "next/link"
-import { Calendar, SquareArrowOutUpRight, Trophy } from "lucide-react"
+import { Calendar, Trophy } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import {
   Table,
@@ -229,7 +229,7 @@ export function Leaderboard({
   useSlamRows(tbodyRef, tableWrapRef, rows.map((r) => r.player_id).join(","), vegasMode, affected)
 
   const leader = rows[0]
-  const loser = rows[rows.length-1]
+  const loser = rows[rows.length - 1]
 
   const handleToggle = () => {
     if (!vegasMode) {
@@ -313,6 +313,7 @@ export function Leaderboard({
                 <TableHead className="text-right">Buy-in</TableHead>
                 <TableHead className="text-right">Cash-out</TableHead>
                 <TableHead className="text-right">Sessions</TableHead>
+                <TableHead className="text-right">Net/Session</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody ref={tbodyRef}>
@@ -327,9 +328,6 @@ export function Leaderboard({
                       {entry.nickname ? (
                         <span className="font-normal text-muted-foreground"> “{entry.nickname}”</span>
                       ) : null}
-                    </Link>
-                    <Link href={`/sessions?playerId=${entry.player_id}`}>
-                      <SquareArrowOutUpRight className="size-3" />
                     </Link>
                   </TableCell>
                   <TableCell className="text-right">
@@ -351,6 +349,12 @@ export function Leaderboard({
                   </TableCell>
                   <TableCell className="text-right tabular-nums text-muted-foreground">
                     {entry.sessions}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                    <AnimatedMoney
+                      value={netFor(entry) / entry.sessions}
+                      className="font-semibold tabular-nums"
+                    />
                   </TableCell>
                 </TableRow>
               ))}
