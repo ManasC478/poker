@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react"
 import type { PlayerProfile, ProfitPoint } from "@/lib/types"
+import { SUIT_SYMBOLS } from "./card"
 import { bioForPlayer } from "@/lib/player-bios"
 import { formatMoney, formatSigned, parseDateKey } from "@/lib/format"
 import {
@@ -82,6 +83,18 @@ export function PlayerProfileView({ profile }: { profile: PlayerProfile }) {
         <StatCard label="Squad sessions" value={String(profile.sessions)} />
         <StatCard label="Total buy-in" value={formatMoney(profile.total_buy_in)} />
         <StatCard label="Total cash-out" value={formatMoney(profile.total_cash_out)} />
+        <StatCard label="Win rate" value={profile.sessions === 0 ? "—" : `${Math.round(profile.win_rate)}%`} />
+        <StatCard
+          label="Current streak"
+          value={profile.current_streak ? `${profile.current_streak.kind}${profile.current_streak.count}` : "—"}
+          win={profile.current_streak?.kind === "W"}
+          loss={profile.current_streak?.kind === "L"}
+        />
+        <StatCard
+          label="Attendance"
+          value={profile.total_squad_sessions === 0 ? "—" : `${Math.round((profile.sessions / profile.total_squad_sessions) * 100)}%`}
+        />
+        <StatCard label="Avg net / night" value={formatSigned(profile.avg_net)} win={profile.avg_net > 0} loss={profile.avg_net < 0} />
       </div>
 
       <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr]  items-start">
@@ -101,7 +114,106 @@ export function PlayerProfileView({ profile }: { profile: PlayerProfile }) {
       </div>
 
       <ProfitGraph points={profitHistory} playerName={player.name} />
+
+      <Highlights profile={profile} />
     </div>
+  )
+}
+
+function Highlights({ profile }: { profile: PlayerProfile }) {
+  const { best_night, worst_night, biggest_pot, longest_win_streak } = profile
+  if (!best_night && !worst_night && !biggest_pot && longest_win_streak === 0) return null
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <h2 className="text-lg font-semibold text-card-foreground">Highlights</h2>
+      <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Best night</p>
+          {best_night ? (
+            <>
+              <p className="mt-1.5 text-2xl font-bold tabular-nums" style={{ color: "var(--win)" }}>
+                {formatSigned(best_night.net)}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                <Link href={`/sessions/${best_night.session_id}`} className="hover:text-blue-600">
+                  {shortDate(best_night.date)}
+                </Link>
+              </p>
+            </>
+          ) : (
+            <p className="mt-1.5 text-2xl font-bold tabular-nums text-foreground">—</p>
+          )}
+        </div>
+
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Worst night</p>
+          {worst_night ? (
+            <>
+              <p className="mt-1.5 text-2xl font-bold tabular-nums" style={{ color: "var(--loss)" }}>
+                {formatSigned(worst_night.net)}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                <Link href={`/sessions/${worst_night.session_id}`} className="hover:text-blue-600">
+                  {shortDate(worst_night.date)}
+                </Link>
+              </p>
+            </>
+          ) : (
+            <p className="mt-1.5 text-2xl font-bold tabular-nums text-foreground">—</p>
+          )}
+        </div>
+
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Biggest pot</p>
+          {biggest_pot ? (
+            <>
+              <p className="mt-1.5 text-2xl font-bold tabular-nums text-foreground">
+                {formatMoney(biggest_pot.amount)}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                <HoleCards card1={biggest_pot.card1} card2={biggest_pot.card2} />{" "}
+                <Link href={`/sessions/${biggest_pot.session_id}`} className="hover:text-blue-600">
+                  {shortDate(biggest_pot.date)}
+                </Link>
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-1.5 text-2xl font-bold tabular-nums text-foreground">—</p>
+              <p className="mt-1 text-sm text-muted-foreground">No winning hand recorded yet</p>
+            </>
+          )}
+        </div>
+
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Longest win streak</p>
+          <p className="mt-1.5 text-2xl font-bold tabular-nums text-foreground">
+            {longest_win_streak === 0 ? "—" : `W${longest_win_streak}`}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {longest_win_streak === 0 ? "No winning nights yet" : "consecutive winning nights"}
+          </p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function HoleCards({ card1, card2 }: { card1: { rank: string; suit: string }; card2: { rank: string; suit: string } }) {
+  return (
+    <span className="font-medium tabular-nums">
+      {[card1, card2].map((c, i) => (
+        <span
+          key={i}
+          className={c.suit === "hearts" || c.suit === "diamonds" ? "text-red-600" : "text-foreground"}
+        >
+          {i > 0 ? " " : ""}
+          {c.rank}
+          {SUIT_SYMBOLS[c.suit]}
+        </span>
+      ))}
+    </span>
   )
 }
 

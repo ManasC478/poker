@@ -71,11 +71,25 @@ Response:
   "net": 230, "sessions": 18, "total_buy_in": 1800, "total_cash_out": 2030,
   "profitHistory": [
     { "session_id": 12, "date": "2026-09-27", "net": 150, "buy_in": 200, "cash_out": 350, "cumulative": 150 }
-  ]
+  ],
+  "win_rate": 61.1, "avg_net": 12.78, "current_streak": { "kind": "W", "count": 3 },
+  "longest_win_streak": 4,
+  "best_night": { "session_id": 12, "date": "2026-09-27", "net": 150, "buy_in": 200, "cash_out": 350, "cumulative": 150 },
+  "worst_night": { "session_id": 9, "date": "2026-09-05", "net": -80, "buy_in": 100, "cash_out": 20, "cumulative": -20 },
+  "biggest_pot": { "amount": 150, "session_id": 12, "date": "2026-09-27", "card1": { "rank": "A", "suit": "spades" }, "card2": { "rank": "A", "suit": "hearts" }, "notes": "" },
+  "total_squad_sessions": 20
 }
 ```
 `cumulative` is the running net across Squad sessions up to and including that
-session. Errors: `400 { "error": "Invalid player id" }`;
+session. `win_rate` is the share of played Squad sessions ended in profit
+(0–100); `avg_net` is the average net per played Squad session;
+`current_streak` is `null` when there are no sessions or the last one broke
+even. `best_night` / `worst_night` are the single best / worst Squad nights
+(`null` when no sessions). `biggest_pot` is the biggest pot the player won
+among hands recorded in the app (`null` when no winning hand is recorded —
+unrecorded hands don't count). `total_squad_sessions` counts every Squad
+session, played or not, so `sessions / total_squad_sessions` is attendance.
+Errors: `400 { "error": "Invalid player id" }`;
 `404 { "error": "Player not found" }`.
 
 ### `GET /api/moments-types`
