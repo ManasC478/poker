@@ -84,7 +84,7 @@ export function PlayerProfileView({ profile }: { profile: PlayerProfile }) {
         <StatCard label="Total cash-out" value={formatMoney(profile.total_cash_out)} />
       </div>
 
-      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr]">
+      <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr]  items-start">
         <PhotoCarousel playerName={player.name} photos={photosForPlayer(player.name)} />
         <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
           <h2 className="text-lg font-semibold text-card-foreground">About {displayName}</h2>
@@ -117,7 +117,7 @@ function PhotoCarousel({ playerName, photos }: { playerName: string; photos: str
         <img
           src={photos[index]}
           alt={`${playerName} — photo ${index + 1} of ${total}`}
-          className="size-full object-contain"
+          className="size-full object-cover"
         />
         <button
           onClick={prev}
@@ -136,18 +136,19 @@ function PhotoCarousel({ playerName, photos }: { playerName: string; photos: str
         <span className="absolute bottom-2 right-2 rounded-full bg-background/80 px-2.5 py-0.5 text-xs font-medium tabular-nums text-foreground">
           {index + 1} / {total}
         </span>
-      </div>
-      <div className="flex items-center justify-center gap-1.5 p-3">
-        {photos.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setIndex(i)}
-            aria-label={`Go to photo ${i + 1}`}
-            className={`size-2 rounded-full transition-colors ${
-              i === index ? "bg-primary" : "bg-muted-foreground/30 hover:bg-muted-foreground/60"
-            }`}
-          />
-        ))}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-foreground bg-primary rounded-full">
+          <div className="flex items-center justify-center gap-1.5 p-3">
+            {photos.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIndex(i)}
+                aria-label={`Go to photo ${i + 1}`}
+                className={`size-2 rounded-full transition-colors ${i === index ? "bg-secondary" : "bg-muted-foreground/80 hover:bg-muted-foreground/100"
+                  }`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   )
