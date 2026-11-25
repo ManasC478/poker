@@ -314,6 +314,8 @@ export function Leaderboard({
                 <TableHead className="text-right">Cash-out</TableHead>
                 <TableHead className="text-right">Sessions</TableHead>
                 <TableHead className="text-right">Net/Session</TableHead>
+                <TableHead className="text-right">Buy-in/Session</TableHead>
+                <TableHead className="text-right">Cash-out/Session</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody ref={tbodyRef}>
@@ -355,6 +357,12 @@ export function Leaderboard({
                       value={netFor(entry) / entry.sessions}
                       className="font-semibold tabular-nums"
                     />
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                      {formatMoney(entry.total_buy_in / entry.sessions)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums text-muted-foreground">
+                      {formatMoney(entry.total_cash_out / entry.sessions)}
                   </TableCell>
                 </TableRow>
               ))}

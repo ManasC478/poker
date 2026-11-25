@@ -263,9 +263,8 @@ function ProfitGraph({ points, playerName }: { points: ProfitPoint[]; playerName
             </svg>
             {hovered && (
               <div className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 rounded-lg border border-border bg-card px-3 py-1.5 text-xs shadow-lg">
-                <span className="font-medium text-foreground">{shortDate(hovered.date)}</span>
-                <span className="text-muted-foreground"> · {formatSigned(hovered.net)} that night · </span>
-                <span className="font-medium text-foreground">{formatSigned(hovered.cumulative)} total</span>
+                <span className="font-medium text-foreground">Session {hovered.session_id} · {shortDate(hovered.date)}</span>
+                <span className="text-foreground"> · {formatSigned(hovered.net)} <span className="text-muted-foreground">({formatSigned(hovered.cumulative)} total)</span></span>
               </div>
             )}
           </div>
@@ -274,7 +273,9 @@ function ProfitGraph({ points, playerName }: { points: ProfitPoint[]; playerName
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Session</TableHead>
+                  <TableHead>Buy-in</TableHead>
+                  <TableHead>Cash-out</TableHead>
                   <TableHead className="text-right">That night</TableHead>
                   <TableHead className="text-right">Running total</TableHead>
                 </TableRow>
@@ -286,6 +287,12 @@ function ProfitGraph({ points, playerName }: { points: ProfitPoint[]; playerName
                       <Link href={`/sessions/${p.session_id}`} className="font-medium text-foreground hover:text-blue-600">
                         {shortDate(p.date)}
                       </Link>
+                    </TableCell>
+                    <TableCell>
+                      {formatMoney(p.buy_in)}
+                    </TableCell>
+                    <TableCell>
+                      {formatMoney(p.cash_out)}
                     </TableCell>
                     <TableCell
                       className="text-right tabular-nums"
