@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import type { Player, PlayerProfile, ProfitPoint, Session, SessionDetail, LeaderboardEntry, MomentType, MomentRow, FilterCondition, Hand } from "@/lib/types"
+import type { Player, PlayerProfile, ProfitPoint, Session, SessionDetail, LeaderboardEntry, MomentType, MomentRow, FilterCondition, Hand, Streak, BiggestPot } from "@/lib/types"
 import { hasTagQueryFn } from "./db/filter/query"
 
 /**
@@ -74,6 +74,57 @@ export async function getPlayerProfile(id: number): Promise<PlayerProfile | null
     }
   })
 
+  const wins = profitHistory.filter((p) => p.net > 0).length
+  const winRate = profitHistory.length === 0 ? 0 : (wins / profitHistory.length) * 100
+  const avgNet = profitHistory.length === 0 ? 0 : running / profitHistory.length
+
+  // Current streak: walk back from the most recent session; a break-even
+  // night ends any streak.
+  let currentStreak: Streak | null = null
+  for (let i = profitHistory.length - 1; i >= 0; i--) {
+    const net = profitHistory[i].net
+    if (net === 0) break
+    const kind = net > 0 ? "W" : "L"
+    if (!currentStreak) currentStreak = { kind, count: 1 }
+    else if (currentStreak.kind === kind) currentStreak.count += 1
+    else break
+  }
+
+  let longestWinStreak = 0
+  let run = 0
+  for (const p of profitHistory) {
+    run = p.net > 0 ? run + 1 : 0
+    longestWinStreak = Math.max(longestWinStreak, run)
+  }
+
+  const bestNight = profitHistory.length === 0
+    ? null
+    : profitHistory.reduce((a, b) => (b.net > a.net ? b : a))
+  const worstNight = profitHistory.length === 0
+    ? null
+    : profitHistory.reduce((a, b) => (b.net < a.net ? b : a))
+
+  // Biggest recorded pot the player won, across the Squad sessions they played.
+  // Only hands recorded in the app count; unrecorded hands are invisible here.
+  let biggestPot: BiggestPot | null = null
+  for (const s of played) {
+    const hands = await getHands(s.id)
+    for (const h of hands) {
+      for (const hp of h.players) {
+        if (hp.player_id === id && hp.is_winner && (!biggestPot || hp.amount_won > biggestPot.amount)) {
+          biggestPot = {
+            amount: hp.amount_won,
+            session_id: s.id,
+            date: s.date,
+            card1: hp.card1,
+            card2: hp.card2,
+            notes: h.notes,
+          }
+        }
+      }
+    }
+  }
+
   return {
     player,
     net: running,
@@ -81,6 +132,14 @@ export async function getPlayerProfile(id: number): Promise<PlayerProfile | null
     total_buy_in: profitHistory.reduce((sum, p) => sum + p.buy_in, 0),
     total_cash_out: profitHistory.reduce((sum, p) => sum + p.cash_out, 0),
     profitHistory,
+    win_rate: winRate,
+    avg_net: avgNet,
+    current_streak: currentStreak,
+    longest_win_streak: longestWinStreak,
+    best_night: bestNight,
+    worst_night: worstNight,
+    biggest_pot: biggestPot,
+    total_squad_sessions: sessions.length,
   }
 }
 

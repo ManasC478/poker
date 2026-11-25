@@ -101,6 +101,22 @@ export type ProfitPoint = {
   cumulative: number
 }
 
+/** A run of consecutive winning ("W") or losing ("L") Squad sessions. */
+export type Streak = {
+  kind: "W" | "L"
+  count: number
+}
+
+/** The biggest pot a player won in a Squad session, from recorded hands. */
+export type BiggestPot = {
+  amount: number
+  session_id: number
+  date: string // YYYY-MM-DD
+  card1: Card
+  card2: Card
+  notes: string
+}
+
 /** Everything the player profile page needs for one player. */
 export type PlayerProfile = {
   player: Player
@@ -111,6 +127,22 @@ export type PlayerProfile = {
   total_cash_out: number
   /** Squad sessions the player played in, oldest first, with running net. */
   profitHistory: ProfitPoint[]
+  /** Share of Squad sessions played that ended in profit, 0–100. 0 when no sessions. */
+  win_rate: number
+  /** Average net per Squad session played. */
+  avg_net: number
+  /** Current run of consecutive winning or losing Squad sessions; null when no sessions or the last session broke even. */
+  current_streak: Streak | null
+  /** Longest run of consecutive winning Squad sessions. */
+  longest_win_streak: number
+  /** Best single Squad night (largest net), null when no sessions. */
+  best_night: ProfitPoint | null
+  /** Worst single Squad night (smallest net), null when no sessions. */
+  worst_night: ProfitPoint | null
+  /** Biggest recorded pot the player won in a Squad session, null when no winning hand is recorded. */
+  biggest_pot: BiggestPot | null
+  /** Total Squad sessions (played or not) — denominator for attendance. */
+  total_squad_sessions: number
 }
 
 export type BuilderFn<T> = (query: PostgrestFilterBuilder<any,any,any,any,any,any,any,any>, value: T) => PostgrestFilterBuilder<any,any,any,any,any,any,any,any>;
